@@ -1,0 +1,1014 @@
+/* Tipografías auto-hospedadas y subseteadas. En dist/ se inyectan como
+   data-URI; aquí se cargan del disco. */
+@font-face{font-family:'Archivo';src:url(../assets/fonts/archivo.woff2) format('woff2');
+  font-weight:100 900;font-stretch:62% 125%;font-style:normal;font-display:swap}
+@font-face{font-family:'Space Mono';src:url(../assets/fonts/mono-400.woff2) format('woff2');
+  font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Space Mono';src:url(../assets/fonts/mono-700.woff2) format('woff2');
+  font-weight:700;font-style:normal;font-display:swap}
+/* Solo para el wordmark del hero — grafiti chorreado, como el tag real.
+   Subseteada a H·O·N·N·3·Y nada más (1.4 KB): no sirve para nada más y no
+   debe usarse en ningún otro sitio de la página — la audacia se gasta aquí. */
+@font-face{font-family:'Tag';src:url(../assets/fonts/nosifer.woff2) format('woff2');
+  font-weight:400;font-style:normal;font-display:swap}
+
+/* ══════════════════════════════════════════════════════════════
+   HONN3Y — sistema de diseño
+   Tesis: la página ES una pieza de equipo. Chasis negro, costuras
+   de un pelo, etiquetas serigrafiadas, y un solo plato vivo.
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  /* Escala de grises — 6 valores, nada más */
+  --void:#060606;      /* chasis / fondo */
+  --carbon:#0c0c0c;    /* panel */
+  --iron:#141414;      /* panel elevado */
+  --steel:#242424;     /* relleno de control */
+  --seam:#2f2f2f;      /* costura / borde */
+  --ash:#5a5a5a;       /* texto terciario */
+  --smoke:#8f8f8f;     /* texto secundario */
+  --bone:#eae8e3;      /* texto primario — hueso, no blanco clínico */
+  /* Único acento de todo el sitio. Solo indica SEÑAL VIVA.
+     Sale del bronce de la abeja. Para matarlo: ponlo en #eae8e3 */
+  --honey:#e2a52f;
+
+  --disp:'Archivo','Arial Narrow','Helvetica Neue',Helvetica,sans-serif;
+  --mono:'Space Mono','Courier New',ui-monospace,monospace;
+
+  --gut:clamp(20px,4.5vw,64px);
+  --pad:clamp(88px,11vw,168px);
+  --hair:1px solid var(--seam);
+  --ease:cubic-bezier(.22,1,.36,1);
+  --ease-mech:cubic-bezier(.65,.02,.18,1); /* mecánico: arranca duro, frena seco */
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  background:var(--void);color:var(--bone);
+  font-family:var(--disp);font-variation-settings:'wdth' 100,'wght' 420;
+  font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+body.locked{overflow:hidden}
+img{display:block;max-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--bone);color:var(--void)}
+:focus-visible{outline:2px solid var(--bone);outline-offset:3px}
+
+/* ─── Etiqueta serigrafiada: la voz de la máquina ─── */
+.lbl{
+  font-family:var(--mono);font-size:10px;font-weight:700;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--ash);
+}
+.lbl--on{color:var(--honey)}
+
+/* ─── Grano: la fotocopia. Único efecto global. ─── */
+/* El grano es un PNG, no un filtro SVG en vivo. Ver tools/grain.py: el
+   <feTurbulence> a pantalla completa multiplicaba por 6.7 el coste de todo lo
+   demás (3794ms → 568ms al ocultarlo). Un mapa de bits se sube a la GPU una
+   vez y se compone gratis.
+   OJO: inset:0, no -150%. Con -150% el elemento medía 16x el área del viewport;
+   se movía porque el grano se animaba, y ya no se anima — el desplazamiento va
+   en background-position, que no re-mezcla la página. */
+/* El grano es un PNG, no un filtro SVG en vivo — ver tools/grain.py.
+   Y NO SE ANIMA. Medido, con la app cargada y en reposo:
+
+       mosaico animado ... 1825 ms      ← coste de un render de audio
+       mosaico quieto ....  266 ms
+       sin grano .........  262 ms      ← idéntico al quieto
+
+   Un grano quieto cuesta lo mismo que no tener grano: es un mapa de bits que
+   la GPU compone gratis. Animarlo obliga a re-mezclar la página entera contra
+   la capa 6 veces por segundo, y eso multiplicaba por 7 el coste de TODO lo
+   demás — por un parpadeo imperceptible al 5.5% de opacidad.
+   El grano de una foto tampoco se mueve. Se queda quieto. */
+#grain{
+  position:fixed;inset:0;z-index:9000;pointer-events:none;
+  background-image:url("assets/grain.png");
+  background-size:180px 180px;
+  opacity:.055;mix-blend-mode:overlay;
+}
+
+/* ══════════ 00 · PUERTA ══════════
+   El autoplay con sonido exige un gesto del usuario. En vez de
+   pelearme con el navegador, lo convierto en la puerta del lugar. */
+#gate{
+  position:fixed;inset:0;z-index:8000;background:var(--void);
+  display:grid;place-items:center;text-align:center;padding:var(--gut);
+}
+#gate .in{max-width:560px}
+#gate .bee{
+  width:clamp(120px,20vw,190px);margin:0 auto 34px;
+  filter:grayscale(1) contrast(1.3) brightness(1.05);
+  animation:drop 1.1s var(--ease) both;
+}
+@keyframes drop{
+  0%{opacity:0;transform:translateY(-40px) rotate(-9deg) scale(.9)}
+  100%{opacity:1;transform:none}
+}
+#gate h1{
+  font-family:'Tag',var(--disp);font-weight:400;
+  font-size:clamp(52px,13vw,112px);
+  line-height:.82;letter-spacing:.015em;margin-bottom:20px;
+  filter:drop-shadow(0 2px 0 rgba(0,0,0,.4));
+}
+#gate .sub{margin-bottom:44px}
+#enter{
+  --w:clamp(200px,26vw,260px);
+  position:relative;width:var(--w);height:60px;
+  border:1px solid var(--bone);overflow:hidden;
+  font-family:var(--mono);font-size:12px;font-weight:700;
+  letter-spacing:.34em;text-transform:uppercase;
+}
+#enter span{position:relative;z-index:2;transition:color .45s var(--ease)}
+#enter::before{
+  content:'';position:absolute;inset:0;background:var(--bone);
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .5s var(--ease-mech);
+}
+#enter:hover::before,#enter:focus-visible::before{transform:scaleX(1)}
+#enter:hover span,#enter:focus-visible span{color:var(--void)}
+#gate .hint{margin-top:22px;color:var(--ash);font-family:var(--mono);font-size:10.5px;letter-spacing:.14em}
+#gate.out{
+  animation:gateOut .9s var(--ease-mech) forwards;
+}
+@keyframes gateOut{to{clip-path:inset(0 0 100% 0);opacity:.4}}
+
+/* ══════════ NAV ══════════ */
+#nav{
+  position:fixed;top:0;left:0;right:0;z-index:600;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:20px;padding:0 var(--gut);height:64px;
+  border-bottom:var(--hair);
+  background:color-mix(in srgb,var(--void) 78%,transparent);
+  backdrop-filter:blur(14px) saturate(0);
+  transform:translateY(-100%);transition:transform .7s var(--ease);
+}
+#nav.show{transform:none}
+.brand{display:flex;align-items:center;gap:11px}
+.brand img{width:26px;filter:grayscale(1) contrast(1.35) brightness(1.1)}
+.brand b{
+  font-variation-settings:'wdth' 70,'wght' 900;
+  font-size:18px;letter-spacing:.06em;
+}
+#nav ul{display:flex;gap:26px;list-style:none}
+#nav ul a{position:relative;padding:4px 0}
+#nav ul a::after{
+  content:'';position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:var(--bone);transform:scaleX(0);transform-origin:right;
+  transition:transform .4s var(--ease);
+}
+#nav ul a:hover::after{transform:scaleX(1);transform-origin:left}
+.onair{display:flex;align-items:center;gap:8px}
+.lamp{
+  width:7px;height:7px;border-radius:50%;background:var(--steel);
+  transition:background .3s,box-shadow .3s;
+}
+body.live .lamp{background:var(--honey);box-shadow:0 0 10px var(--honey);animation:pulse 2.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+body.live .onair .lbl{color:var(--honey)}
+@media(max-width:900px){#nav nav{display:none}}
+/* Hamburguesa: dos hairlines, como las costuras del chasis */
+#burger{display:none;width:34px;height:34px;position:relative}
+#burger i{position:absolute;left:7px;right:7px;height:1px;background:var(--bone);
+  transition:transform .45s var(--ease-mech),opacity .3s}
+#burger i:nth-child(1){top:13px}
+#burger i:nth-child(2){top:20px}
+body.menu #burger i:nth-child(1){transform:translateY(3.5px) rotate(45deg)}
+body.menu #burger i:nth-child(2){transform:translateY(-3.5px) rotate(-45deg)}
+@media(max-width:900px){#burger{display:block}}
+#menu{
+  position:fixed;inset:0;z-index:590;background:var(--void);
+  display:flex;flex-direction:column;justify-content:center;gap:6px;
+  padding:0 var(--gut);
+  clip-path:inset(0 0 100% 0);pointer-events:none;
+  transition:clip-path .6s var(--ease-mech);
+}
+body.menu #menu{clip-path:inset(0 0 0 0);pointer-events:auto}
+#menu a{
+  font-size:clamp(38px,13vw,64px);font-variation-settings:'wdth' 64,'wght' 900;
+  line-height:1.02;border-bottom:var(--hair);padding:12px 0;
+  transform:translateY(14px);opacity:0;
+  transition:transform .5s var(--ease),opacity .4s;
+}
+body.menu #menu a{transform:none;opacity:1;transition-delay:calc(var(--i)*65ms + .18s)}
+#menu .foot{margin-top:26px}
+
+/* Los hijos de grid/flex llevan min-width:auto y no bajan de su min-content:
+   el input[type=range] del fader tiene tamaño intrínseco del navegador (~130px)
+   y estiraba la pista del hero a 459px, desbordando en móvil. min-width:0 los
+   deja encoger. Es el arreglo estándar y hay que ponerlo en TODOS los grids. */
+#deck-sec > *, #bio > *, .book > *, .setrow > *, .transport > *, .fader > *{min-width:0}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   01 · HERO — EL CONTROLADOR
+   ══════════════════════════════════════════════════════════════════════════
+   El controlador ES el hero. No hay foto: está dibujado con CSS, así que
+   escala sin pixelar (la foto original era de 407×582) y, sobre todo, se puede
+   tocar. Se gasta aquí toda la audacia de la página; lo demás se calla.
+
+   El naranja del DDJ-FLX4 y nuestro ámbar son el mismo color. Casualidad útil:
+   la paleta ya estaba preparada para esto. El ámbar sigue significando UNA cosa
+   —señal viva— así que solo se enciende lo que está sonando.
+   ══════════════════════════════════════════════════════════════════════════ */
+#deck-sec{
+  min-height:100svh;padding:92px var(--gut) 44px;
+  display:flex;flex-direction:column;justify-content:center;
+  gap:clamp(22px,3.4vw,40px);
+}
+#deck-sec > *{min-width:0}
+
+.hero-top{display:grid;grid-template-columns:1fr auto;gap:20px 34px;align-items:end}
+@media(max-width:760px){.hero-top{grid-template-columns:1fr}}
+
+.eyebrow{
+  display:flex;align-items:center;gap:14px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--smoke);
+}
+.eyebrow .bar{height:1px;width:clamp(24px,5vw,70px);background:var(--seam)}
+#nowTitle{color:var(--bone);font-weight:700}
+
+/* El wordmark es la única audacia tipográfica de la página — el grafiti real
+   del tag, chorreado, tal cual está pintado en la pared. Nosifer sale del
+   sistema de tipos limpio a propósito: esto no es una marca corporativa. */
+.wordmark{
+  font-family:'Tag',var(--disp);
+  font-size:clamp(48px,11.5vw,168px);
+  font-weight:400;line-height:.72;letter-spacing:.01em;color:var(--bone);
+  margin:.14em 0 .4em;
+  filter:drop-shadow(0 3px 0 rgba(0,0,0,.4));
+}
+.wordmark span{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:.22em;margin-bottom:-.22em}
+.wordmark i{display:inline-block;font-style:normal;transform:translateY(105%)}
+body.entered .wordmark i{
+  transform:none;transition:transform .95s var(--ease-mech);
+  transition-delay:calc(var(--i) * 55ms + .2s);
+}
+.tag{display:flex;flex-wrap:wrap;gap:7px}
+.tag i{
+  font-style:normal;font-family:var(--mono);font-size:9px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--smoke);border:var(--hair);padding:5px 9px;
+}
+
+/* ══════════ CHASIS + CARRIL, lado a lado ══════════
+   El plato es el alma de la página: el reproductor manda en ancho, el carril
+   de portadas es su compañero fijo a la derecha — nunca se desploma debajo
+   salvo en pantallas angostas, donde no cabe otra cosa. */
+.player-wrap{
+  display:flex;align-items:stretch;gap:clamp(10px,1.6vw,20px);
+}
+/* ══════════ DESCRIPCIÓN DEL SET — junto a la portada, solo escritorio ══════════
+   Vive entre el reproductor y el carril: la misma franja de aire que separa
+   "lo que suena" de "lo que puedes elegir". Cambia con cada set, con una
+   subida suave — el mismo lenguaje de movimiento que el carril de al lado. */
+.setdesc{
+  flex:0 0 clamp(168px,17vw,224px);
+  display:flex;flex-direction:column;justify-content:center;gap:12px;
+  padding:6px 2px;
+}
+.sd-n{
+  font-family:var(--mono);font-size:32px;font-weight:700;color:var(--seam);
+  line-height:1;letter-spacing:-.02em;
+}
+.sd-title{
+  font-family:var(--disp);font-variation-settings:'wdth' 80,'wght' 800;
+  font-size:19px;line-height:1.08;color:var(--bone);
+}
+.sd-meta{
+  font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--honey);
+}
+.sd-copy{font-size:12.5px;line-height:1.6;color:var(--ash);max-width:32ch}
+@media(max-width:980px){
+  .player-wrap{flex-direction:column}
+  .setdesc{display:none}
+}
+
+/* ══════════ EL CHASIS ══════════
+   Proporción de un reproductor de mesa real, hiperrealista: chapa cepillada,
+   tornillos en las esquinas, costura de un pelo entre paneles. */
+.player{
+  --jog:clamp(210px,29vw,336px);
+  --side:clamp(52px,6vw,76px);
+  flex:1 1 560px;max-width:640px;
+  position:relative;border:var(--hair);
+  background:
+    repeating-linear-gradient(100deg,rgba(255,255,255,.014) 0 1px,transparent 1px 3px),
+    linear-gradient(180deg,#161616 0%,#0e0e0e 44%,#090909 100%);
+  box-shadow:0 70px 160px -55px #000, inset 0 1px 0 rgba(255,255,255,.06), inset 0 0 60px rgba(0,0,0,.35);
+  padding:clamp(14px,2vw,20px);
+  display:flex;flex-direction:column;gap:clamp(11px,1.6vw,16px);
+}
+/* tornillos de chapa — el detalle hiperrealista más barato que hay */
+.screws{position:absolute;inset:0;pointer-events:none}
+.screws i{
+  position:absolute;width:6px;height:6px;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,#6a6a6a,#1c1c1c 60%,#050505);
+  box-shadow:0 1px 1px rgba(255,255,255,.12), 0 1px 2px rgba(0,0,0,.9);
+}
+.screws i::after{
+  content:'';position:absolute;inset:1.3px;border-radius:1px;
+  background:linear-gradient(100deg,#050505 46%,transparent 48% 52%,#050505 54%);
+}
+.screws i:nth-child(1){left:8px;top:8px}
+.screws i:nth-child(2){right:8px;top:8px}
+.screws i:nth-child(3){left:8px;bottom:8px}
+.screws i:nth-child(4){right:8px;bottom:8px}
+
+/* ══════════ PANTALLA + SELECTOR ══════════ */
+.p-top{display:flex;gap:clamp(8px,1.2vw,14px);align-items:stretch}
+
+.screen{
+  flex:1;min-width:0;border:1px solid #050505;border-radius:2px;
+  background:linear-gradient(165deg,#0a0d10,#020304 70%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.04), inset 0 2px 14px rgba(0,0,0,.9),
+             0 1px 0 rgba(255,255,255,.03);
+  padding:6px 9px 5px;display:flex;flex-direction:column;gap:4px;
+  position:relative;overflow:hidden;
+}
+.screen::before{                    /* el brillo de cristal, sutil, estático */
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:linear-gradient(115deg,rgba(255,255,255,.055) 0%,transparent 24%);
+}
+.screen::after{                     /* líneas finísimas del cristal LCD */
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:1;opacity:.5;
+  background:repeating-linear-gradient(180deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px);
+}
+/* La pantalla se achica a propósito: el plato es el alma de la página, no un
+   dato binario. Solo lo esencial: título, BPM, onda, tiempo. */
+.screen--slim{padding-top:5px;padding-bottom:4px}
+.scr-row{display:flex;align-items:center;gap:9px;min-width:0}
+.scr-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.scr-title{
+  font-family:var(--mono);font-size:clamp(9.5px,1.05vw,11px);font-weight:700;
+  letter-spacing:.03em;color:var(--bone);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.scr-meta{
+  font-family:var(--mono);font-size:8px;letter-spacing:.09em;color:var(--ash);
+  text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.scr-bpm{
+  flex:0 0 auto;font-family:var(--mono);font-weight:700;font-size:clamp(12px,1.4vw,15px);
+  color:var(--bone);font-variant-numeric:tabular-nums;line-height:1;transition:color .3s;
+}
+body.live .scr-bpm{color:var(--honey)}
+.scr-bpm sup{font-size:6.5px;display:block;color:var(--ash);font-weight:700;letter-spacing:.1em;text-align:right}
+
+.scr-wave{position:relative;flex:1;min-height:13px;max-height:22px;background:#040504;border-radius:1px;overflow:hidden}
+.scr-wave canvas{width:100%;height:100%;display:block}
+.scr-head{position:absolute;top:0;bottom:0;width:1px;background:var(--ash);left:0;transition:background .3s,box-shadow .3s}
+body.live .scr-head{background:var(--honey);box-shadow:0 0 5px var(--honey)}
+
+.scr-foot{display:flex;justify-content:space-between;align-items:center}
+.scr-time{
+  font-family:var(--mono);font-size:9px;font-weight:700;color:var(--ash);
+  font-variant-numeric:tabular-nums;letter-spacing:.04em;
+}
+.scr-air{
+  font-family:var(--mono);font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ash);
+}
+body.live .scr-air{color:var(--honey)}
+body.live .scr-air::before{content:'● ';}
+
+/* ══════════ SELECTOR — cambia de set ══════════
+   El único mando plateado del original. Aquí es el que de verdad decide qué
+   suena: girarlo avanza o retrocede en el crate, como el selector de
+   navegación de un reproductor real. */
+.selector-col{
+  flex:0 0 auto;width:var(--side);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;
+}
+.selector-col .lbl{font-size:7px;letter-spacing:.14em;color:var(--ash)}
+.selector{
+  width:clamp(38px,4.4vw,54px);aspect-ratio:1;border-radius:50%;position:relative;
+  cursor:ns-resize;touch-action:none;
+  background:radial-gradient(circle at 42% 32%,#d4d4d4,#8c8c8c 46%,#5c5c5c 78%,#3d3d3d);
+  box-shadow:0 3px 9px rgba(0,0,0,.85), inset 0 1px 1px rgba(255,255,255,.5), inset 0 -2px 4px rgba(0,0,0,.35);
+}
+.selector::before{                  /* muescas alrededor, como un encoder */
+  content:'';position:absolute;inset:-3px;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,#1a1a1a 0 2deg,transparent 2deg 15deg);
+  opacity:.7;z-index:-1;
+}
+.sel-notch{
+  position:absolute;left:50%;top:8%;width:2.5px;height:26%;transform:translateX(-50%);
+  background:#2a2a2a;border-radius:1px;
+}
+.selector.grabbing{filter:brightness(1.08)}
+.selector:focus-visible{outline:2px solid var(--honey);outline-offset:4px}
+.sel-readout{
+  font-family:var(--mono);font-size:9px;font-weight:700;color:var(--ash);
+  font-variant-numeric:tabular-nums;letter-spacing:.03em;
+}
+.sel-flash{animation:selflash .35s var(--ease)}
+@keyframes selflash{0%{color:var(--honey)}100%{color:var(--ash)}}
+
+/* ══════════ FILA PRINCIPAL: transporte · jog · tempo ══════════ */
+.p-main{display:flex;align-items:stretch;gap:clamp(6px,1vw,12px)}
+
+.p-left{
+  flex:0 0 var(--side);display:flex;flex-direction:column;
+  justify-content:space-between;gap:8px;
+}
+.dirbtn{
+  font-family:var(--mono);font-size:7.5px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--smoke);border:1px solid var(--seam);border-radius:2px;
+  padding:6px 2px;background:linear-gradient(#1c1c1c,#101010);transition:all .15s var(--ease);
+}
+.dirbtn:hover{border-color:var(--ash);color:var(--bone)}
+.dirbtn.on{background:var(--honey);color:var(--void);border-color:var(--honey)}
+
+.searchpair{display:flex;gap:4px}
+.searchpair button{
+  flex:1;aspect-ratio:1;border:1px solid var(--seam);border-radius:2px;
+  background:linear-gradient(#1a1a1a,#101010);color:var(--smoke);font-size:9px;
+  display:grid;place-items:center;transition:all .12s var(--ease);
+}
+.searchpair button:hover, .searchpair button.active{color:var(--bone);border-color:var(--ash);background:var(--steel)}
+
+.transport{display:flex;flex-direction:column;gap:6px}
+.tbig{
+  height:clamp(30px,3.4vw,40px);border-radius:3px;border:1px solid var(--seam);
+  background:linear-gradient(#1c1c1c,#101010);
+  font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--smoke);transition:all .13s var(--ease);
+  display:grid;place-items:center;
+}
+.tbig:hover{border-color:var(--ash);color:var(--bone)}
+.tbig svg{width:13px;height:13px;fill:var(--smoke)}
+.tbig--cue.on{background:var(--honey);border-color:var(--honey);color:var(--void)}
+.tbig--play{border-color:rgba(226,165,47,.42)}
+.tbig--play svg{fill:var(--smoke)}
+body.live .tbig--play{background:var(--honey);border-color:var(--honey)}
+body.live .tbig--play svg{fill:var(--void)}
+
+/* ══════════ EL PLATO — elemento firma, el alma de la página ══════════
+   Hiperrealista mediante capas: aro de agarre texturizado (como el goma
+   moleteada de un jog real), chapa cepillada con bandas de luz, sheen de
+   cristal estático (nunca animado — un brillo que se mueve solo es ruido,
+   uno fijo es una superficie). */
+.jogzone{flex:1;display:grid;place-items:center;min-width:0}
+.jog{
+  position:relative;width:var(--jog);aspect-ratio:1;border-radius:50%;
+  cursor:grab;touch-action:none;isolation:isolate;
+  background:
+    conic-gradient(from 200deg,#525252,#1c1c1c 18%,#666 34%,#1a1a1a 52%,#5a5a5a 68%,#181818 84%,#525252),
+    radial-gradient(circle at 30% 22%,rgba(255,255,255,.10),transparent 55%);
+  background-blend-mode:normal,screen;
+  box-shadow:0 20px 46px rgba(0,0,0,.9), inset 0 0 0 1px rgba(255,255,255,.1);
+}
+/* el agarre moleteado del borde metálico — igual que un jog real */
+.jog-grip{
+  position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:repeating-conic-gradient(from 0deg,rgba(0,0,0,.5) 0 .45deg,transparent .45deg 1.6deg);
+  -webkit-mask:radial-gradient(circle,transparent 0 88%,#000 90.5%,#000 97%,transparent 98.5%);
+          mask:radial-gradient(circle,transparent 0 88%,#000 90.5%,#000 97%,transparent 98.5%);
+  opacity:.85;
+}
+.jog::before{
+  content:'';position:absolute;inset:9%;border-radius:50%;
+  background:radial-gradient(circle at 44% 36%,#363636,#171717 60%,#0b0b0b);
+  box-shadow:inset 0 4px 13px rgba(0,0,0,.95), inset 0 -2px 8px rgba(255,255,255,.03), 0 0 0 1px rgba(0,0,0,.9);
+}
+.jog-face{
+  position:absolute;inset:9%;border-radius:50%;overflow:hidden;z-index:2;
+  background:repeating-radial-gradient(circle at 50% 50%,
+    rgba(255,255,255,.05) 0 1px, rgba(0,0,0,.36) 1px 3px);
+  will-change:transform;
+}
+.jog-ticks{
+  position:absolute;inset:4%;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,
+    rgba(234,232,227,.5) 0 1.2deg, transparent 1.2deg 6deg);
+  -webkit-mask:radial-gradient(circle closest-side,transparent 0 74%,#000 78%);
+          mask:radial-gradient(circle closest-side,transparent 0 74%,#000 78%);
+}
+/* reflejo de cristal fijo — una superficie curva bajo luz de estudio, no un
+   efecto animado */
+.jog-sheen{
+  position:absolute;inset:9%;border-radius:50%;z-index:3;pointer-events:none;
+  background:conic-gradient(from 150deg at 50% 50%,
+    transparent 0deg, rgba(255,255,255,.09) 18deg, transparent 40deg,
+    transparent 200deg, rgba(255,255,255,.05) 224deg, transparent 250deg, transparent 360deg);
+  mix-blend-mode:screen;
+}
+.jog-hub{
+  position:absolute;left:50%;top:50%;width:20%;aspect-ratio:1;z-index:3;
+  transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;
+  background:radial-gradient(circle at 38% 32%,#3a3a3a,#0d0d0d 72%);
+  box-shadow:0 2px 6px rgba(0,0,0,.95), 0 0 0 1px rgba(0,0,0,.7);
+  display:grid;place-items:center;
+}
+.jog-hub img{width:52%;height:auto;filter:grayscale(1) contrast(1.3) brightness(2.4);opacity:.8}
+/* la marca de dirección — igual que el triángulo del XDJ. Gira 180° con
+   DIRECTION: es información real (hacia dónde avanza el disco), no adorno.
+   Un solo acento en toda la página: hueso en reposo, ámbar cuando el sentido
+   está invertido — porque eso sí cambia lo que suena. */
+.jog-tri{
+  position:absolute;left:50%;top:6.5%;width:0;height:0;z-index:4;
+  transform:translateX(-50%);
+  border-left:5px solid transparent;border-right:5px solid transparent;
+  border-bottom:8px solid var(--bone);transition:transform .3s var(--ease),border-bottom-color .3s;
+}
+.jog.rev .jog-tri{border-bottom-color:var(--honey);filter:drop-shadow(0 0 3px rgba(226,165,47,.6))}
+.jog.rev .jog-tri{transform:translateX(-50%) rotate(180deg)}
+.jog.grabbing{cursor:grabbing}
+body.live .jog{box-shadow:0 16px 38px rgba(0,0,0,.9), inset 0 0 0 1px rgba(226,165,47,.30)}
+.jog:focus-visible{outline:2px solid var(--honey);outline-offset:5px}
+
+/* ══════════ TEMPO ══════════ */
+.p-right{flex:0 0 var(--side);display:flex;flex-direction:column;align-items:center;gap:7px}
+.p-right .lbl{font-size:7px;letter-spacing:.14em;color:var(--ash)}
+.tslot{position:relative;flex:1;width:100%;display:grid;place-items:center}
+.tslot input[type=range]{position:absolute;width:120px;height:20px;transform:rotate(-90deg)}
+.tticks{
+  position:absolute;top:0;bottom:0;left:50%;width:16px;transform:translateX(-50%);
+  background:
+    linear-gradient(var(--seam),var(--seam)) 50% 0/1px 100% no-repeat,
+    repeating-linear-gradient(to bottom,var(--seam) 0 1px,transparent 1px 12.5%);
+  pointer-events:none;
+}
+.tticks::after{content:'';position:absolute;left:-5px;right:-5px;top:50%;height:1px;background:var(--ash)}
+.tval{
+  font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.05em;
+  color:var(--ash);border:1px solid var(--seam);padding:3px 5px;
+  font-variant-numeric:tabular-nums;transition:all .2s var(--ease);
+}
+.tval:hover{background:var(--bone);color:var(--void);border-color:var(--bone)}
+.tslot input[type=range]::-webkit-slider-thumb{
+  width:11px;height:24px;margin-top:-11px;border-radius:2px;
+  background:linear-gradient(90deg,#8e8e8e,#e6e6e6 45%,#9a9a9a);
+  box-shadow:0 1px 3px rgba(0,0,0,.9);
+}
+.tslot input[type=range]::-moz-range-thumb{
+  width:11px;height:24px;border-radius:2px;border:0;
+  background:linear-gradient(90deg,#8e8e8e,#e6e6e6 45%,#9a9a9a);
+}
+
+/* ══════════ PLACA DE MARCA ══════════ */
+.p-brand{
+  display:flex;align-items:center;gap:7px;padding-top:2px;
+  border-top:1px solid #1c1c1c;
+}
+.p-brand img{width:14px;height:auto;filter:grayscale(1) contrast(1.3) brightness(1.5)}
+.p-brand b{
+  font-family:var(--disp);font-variation-settings:'wdth' 64,'wght' 800;
+  font-size:12px;letter-spacing:.09em;color:var(--smoke);
+}
+.p-brand span{
+  margin-left:auto;font-family:var(--mono);font-size:7.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:#3d3d3d;
+}
+
+@media(max-width:420px){
+  .player{--side:52px}
+  .scr-meta{display:none}
+}
+
+/* ══════════ CARRIL — portadas junto al reproductor ══════════
+   La portada activa crece; las demás se reparten el alto sobrante. El único
+   motor de la animación es `flex-grow` con transición: cuando cambia el
+   set activo, TODO el carril se reacomoda en cascada — esa es la "subida"
+   que pidió el cliente, sin JS calculando alturas a mano. */
+#rail{
+  flex:0 0 clamp(200px,23vw,280px);
+  display:flex;flex-direction:column;gap:7px;
+}
+.setcard{
+  position:relative;overflow:hidden;border:var(--hair);background:var(--carbon);
+  flex:5 1 0%;min-height:52px;text-align:left;cursor:pointer;
+  transition:flex-grow .62s cubic-bezier(.22,.9,.18,1),
+             border-color .3s var(--ease), box-shadow .4s var(--ease);
+}
+.setcard.active{
+  flex-grow:26;border-color:var(--ash);
+  box-shadow:0 26px 50px -20px rgba(0,0,0,.85);
+}
+.sc-cover{position:absolute;inset:0}
+.sc-cover img{
+  width:100%;height:100%;object-fit:cover;
+  filter:grayscale(1) contrast(1.16) brightness(.56);
+  transition:filter .5s var(--ease);
+}
+.setcard.active .sc-cover img{filter:grayscale(1) contrast(1.2) brightness(.84)}
+.sc-bee{
+  object-fit:contain!important;padding:24%;opacity:.2;
+  filter:grayscale(1) contrast(1.3) brightness(1.7)!important;
+}
+.sc-shade{
+  position:absolute;inset:0;
+  background:linear-gradient(0deg,rgba(0,0,0,.88) 0%,rgba(0,0,0,.2) 52%,transparent 76%);
+}
+.sc-n{
+  position:absolute;left:9px;top:7px;font-family:var(--mono);font-size:8px;
+  font-weight:700;letter-spacing:.1em;color:var(--ash);transition:color .3s;
+}
+.setcard.active .sc-n{color:var(--honey)}
+/* click en la portada = ver el video aquí mismo, si lo hay */
+.sc-play{
+  position:absolute;right:8px;top:7px;width:19px;height:19px;border-radius:50%;
+  display:grid;place-items:center;background:rgba(0,0,0,.55);
+  border:1px solid rgba(226,165,47,.5);opacity:0;transform:scale(.7);
+  transition:opacity .25s var(--ease),transform .25s var(--ease);
+}
+.sc-play svg{width:7.5px;height:7.5px;fill:var(--honey);margin-left:1px}
+.setcard:hover .sc-play,.setcard.active .sc-play{opacity:1;transform:scale(1)}
+.sc-txt{
+  position:absolute;left:9px;right:30px;bottom:7px;
+  display:flex;flex-direction:column;gap:1px;
+}
+.sc-title{
+  font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.02em;
+  color:var(--bone);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sc-meta{
+  font-family:var(--mono);font-size:7.5px;letter-spacing:.08em;color:var(--ash);
+  text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  opacity:0;max-height:0;transition:opacity .4s var(--ease) .1s,max-height .4s var(--ease);
+}
+.setcard.active .sc-meta{opacity:1;max-height:14px}
+.setcard:hover{border-color:var(--ash)}
+.setcard:focus-visible{outline:2px solid var(--honey);outline-offset:-2px}
+
+@media(max-width:980px){
+  /* el carril se acuesta: mismo mecanismo de flex-grow, ahora en horizontal */
+  #rail{flex-direction:row;height:clamp(150px,32vw,200px)}
+  .setcard{min-height:0;min-width:44px}
+  .sc-txt{right:9px}
+  /* en una tarjeta angosta, "Ho..." no dice nada — mejor solo el número,
+     grande y centrado, hasta que esa tarjeta se convierta en la activa */
+  .setcard:not(.active) .sc-txt{display:none}
+  .setcard:not(.active) .sc-n{
+    left:50%;top:50%;transform:translate(-50%,-50%);
+    font-size:13px;color:var(--smoke);
+  }
+}
+
+/* ══════════ PISTA DE USO ══════════ */
+.tip{
+  max-width:62ch;font-size:12.5px;color:var(--ash);line-height:1.65;
+  opacity:0;transform:translateY(6px);
+  transition:opacity .6s var(--ease),transform .6s var(--ease);
+}
+body.entered .tip{opacity:1;transform:none;transition-delay:1.1s}
+.tip .lbl{color:var(--bone)}
+body.scratching .tip{opacity:.22}
+
+/* ══════════ MINI PLAYER — vinilo ══════════ */
+.vinyl{
+  position:absolute;inset:0;border-radius:50%;overflow:hidden;
+  background:
+    repeating-radial-gradient(circle at 50% 50%,
+      rgba(255,255,255,.11) 0 1px, rgba(0,0,0,.5) 1px 3.5px),
+    radial-gradient(circle at 36% 30%,#3d3d3d 0%,#151515 58%,#070707 100%);
+  box-shadow:inset 0 0 30px rgba(0,0,0,.9);
+  will-change:transform;
+}
+.label{
+  position:absolute;left:50%;top:50%;width:44%;aspect-ratio:1;
+  transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;
+  background:var(--bone);box-shadow:0 0 0 1px rgba(0,0,0,.55);
+  display:grid;place-items:center;
+}
+.label img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.25) brightness(.94)}
+.label.empty img{display:none}
+.spindle{
+  position:absolute;left:50%;top:50%;width:9%;aspect-ratio:1;
+  transform:translate(-50%,-50%);border-radius:50%;
+  background:#c9c9c9;box-shadow:0 0 5px rgba(0,0,0,.9);z-index:4;
+}
+/* white label: el estado honesto mientras no haya link */
+.wl{display:none;text-align:center;line-height:1;padding:5px}
+.label.empty .wl, .jog-label.empty .wl{display:block}
+.wl img{width:22px;margin:0 auto 3px;filter:grayscale(1) invert(1) contrast(1.15);height:auto}
+.wl b{display:block;font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.04em;color:var(--void)}
+.wl s{display:block;text-decoration:none;font-family:var(--mono);font-size:5.5px;letter-spacing:.16em;color:#7d7d7d;margin-top:2px}
+
+.tbtn{
+  width:38px;height:38px;border:var(--hair);display:grid;place-items:center;
+  transition:background .25s var(--ease),border-color .25s;
+}
+.tbtn:hover{background:var(--steel);border-color:var(--ash)}
+.tbtn svg{width:12px;height:12px;fill:var(--bone)}
+
+input[type=range]{
+  -webkit-appearance:none;appearance:none;flex:1 1 0;min-width:0;height:22px;
+  background:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--seam)}
+input[type=range]::-moz-range-track{height:2px;background:var(--seam)}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:9px;height:20px;background:var(--bone);
+  margin-top:-9px;border-radius:1px;
+}
+input[type=range]::-moz-range-thumb{width:9px;height:20px;background:var(--bone);border:0;border-radius:1px}
+
+/* ══════════ TICKER ══════════ */
+.ticker{
+  border-block:var(--hair);overflow:hidden;padding:13px 0;
+  background:var(--carbon);white-space:nowrap;
+}
+.ticker div{display:inline-flex;gap:38px;animation:roll 34s linear infinite}
+.ticker span{
+  font-family:var(--mono);font-size:11px;font-weight:700;
+  letter-spacing:.24em;text-transform:uppercase;color:var(--smoke);
+}
+.ticker span b{color:var(--honey);font-weight:700}
+@keyframes roll{to{transform:translateX(-50%)}}
+
+/* ══════════ SECCIONES ══════════ */
+section{padding:var(--pad) var(--gut)}
+.head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:20px;border-bottom:var(--hair);padding-bottom:16px;margin-bottom:clamp(34px,5vw,60px);
+}
+.head h2{
+  font-size:clamp(30px,5.6vw,62px);
+  font-variation-settings:'wdth' 66,'wght' 900;
+  line-height:.9;letter-spacing:.01em;
+}
+/* revelado: limpiada de crossfader, no un fade genérico */
+.rev{clip-path:inset(0 100% 0 0);opacity:0;transition:clip-path 1s var(--ease-mech),opacity .5s linear;
+  transition-delay:calc(var(--i,0)*90ms)}
+.rev.in{clip-path:inset(0 0 0 0);opacity:1}
+
+/* ─── 02 · SETS ─── */
+.setrow{
+  display:grid;grid-template-columns:52px 128px 1fr auto auto;
+  gap:clamp(12px,2.2vw,26px);align-items:center;
+  padding:16px 6px;border-bottom:var(--hair);width:100%;text-align:left;
+  transition:background .35s var(--ease),padding .35s var(--ease);
+}
+.setrow:hover{background:var(--iron);padding-left:14px}
+.setrow .idx{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--ash)}
+.setrow .thumb{
+  position:relative;aspect-ratio:16/9;background:var(--iron);border:var(--hair);overflow:hidden;
+}
+.setrow .thumb img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.2) brightness(.78);transition:filter .4s,transform .8s var(--ease)}
+.setrow:hover .thumb img{filter:grayscale(1) contrast(1.2) brightness(1);transform:scale(1.06)}
+.setrow .thumb .wlmini{position:absolute;inset:0;display:grid;place-items:center;
+  font-family:var(--mono);font-size:8px;letter-spacing:.14em;color:var(--ash)}
+.setrow .thumb.has .wlmini{display:none}
+.setrow h3{font-size:clamp(16px,2vw,21px);font-variation-settings:'wdth' 88,'wght' 700;line-height:1.2}
+.setrow .meta{color:var(--ash);font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;margin-top:5px}
+.setrow .dur{font-family:var(--mono);font-size:11px;color:var(--smoke)}
+.setrow .go{
+  font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.18em;
+  color:var(--ash);border:var(--hair);padding:8px 12px;transition:all .3s var(--ease);
+}
+.setrow:hover .go{color:var(--void);background:var(--bone);border-color:var(--bone)}
+.setrow[aria-current=true] .idx{color:var(--honey)}
+@media(max-width:760px){
+  .setrow{grid-template-columns:34px 92px 1fr;gap:12px}
+  .setrow .dur,.setrow .go{display:none}
+}
+
+/* ─── 03 · BIO ─── */
+#bio{display:grid;grid-template-columns:minmax(280px,.85fr) 1fr;gap:clamp(28px,6vw,80px);align-items:center}
+@media(max-width:900px){#bio{grid-template-columns:1fr}}
+.portrait{position:relative;border:var(--hair);overflow:hidden;background:var(--carbon)}
+.portrait img{width:100%;filter:contrast(1.06);transition:transform 1.4s var(--ease)}
+.portrait:hover img{transform:scale(1.03)}
+.portrait::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(6,6,6,.85) 0%,transparent 45%);
+}
+.portrait figcaption{
+  position:absolute;left:16px;bottom:14px;z-index:2;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;color:var(--smoke);
+}
+.bio-copy p{
+  font-size:clamp(15px,1.6vw,18px);color:var(--smoke);max-width:56ch;margin-bottom:18px;
+  font-variation-settings:'wdth' 100,'wght' 400;
+}
+.bio-copy p.lead{color:var(--bone);font-size:clamp(19px,2.4vw,28px);line-height:1.35;
+  font-variation-settings:'wdth' 92,'wght' 500}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--seam);border:var(--hair);margin-top:38px}
+.stats div{background:var(--void);padding:18px 16px}
+.stats b{display:block;font-size:clamp(24px,3.4vw,38px);font-variation-settings:'wdth' 70,'wght' 900;line-height:1;margin-bottom:7px}
+
+/* ─── 04 · GALERÍA ─── */
+/* Rejilla editorial de filas fijas: con aspect-ratio por tile las alturas no
+   casaban y quedaban huecos bajo los tiles cortos. Con grid-row span todas las
+   piezas de una fila miden lo mismo. Fila A = 3 unidades, filas B/C = 2. */
+.grid{
+  display:grid;grid-template-columns:repeat(12,1fr);
+  grid-auto-rows:clamp(96px,12.5vw,168px);gap:clamp(8px,1.2vw,14px);
+}
+.tile{
+  position:relative;overflow:hidden;border:var(--hair);background:var(--carbon);
+  cursor:zoom-in;
+}
+.tile img{
+  width:100%;height:100%;object-fit:cover;
+  transform:scale(var(--z,1));transform-origin:var(--o,50% 50%);
+  transition:transform 1.2s var(--ease),filter .5s;
+}
+.tile:hover img{transform:scale(calc(var(--z,1) * 1.07))}
+.tile::after{
+  content:attr(data-cap);position:absolute;left:10px;bottom:8px;z-index:2;
+  font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--bone);
+  opacity:0;transform:translateY(6px);transition:all .4s var(--ease);
+  text-shadow:0 1px 8px #000;
+}
+.tile:hover::after{opacity:1;transform:none}
+.tile.slot{cursor:default;display:grid;place-items:center;border-style:dashed;border-color:#1e1e1e}
+.tile.slot p{font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:#3a3a3a;text-align:center}
+.t1{grid-column:span 5;grid-row:span 3}
+.t2{grid-column:span 4;grid-row:span 3}
+.t3{grid-column:span 3;grid-row:span 3}
+.t4{grid-column:span 4;grid-row:span 2}
+.t5{grid-column:span 5;grid-row:span 2}
+.t6{grid-column:span 3;grid-row:span 2}
+.s1{grid-column:span 4;grid-row:span 2}
+.s2{grid-column:span 3;grid-row:span 2}
+.s3{grid-column:span 5;grid-row:span 2}
+@media(max-width:800px){
+  .t1,.t2{grid-column:span 6;grid-row:span 3}
+  .t3,.t6,.s2{grid-column:span 6;grid-row:span 2}
+  .t4,.t5,.s1,.s3{grid-column:span 12;grid-row:span 2}
+}
+
+/* ─── 05 · BOOKING ─── */
+#booking{border-top:var(--hair)}
+.book{display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,5vw,70px);align-items:end}
+@media(max-width:800px){.book{grid-template-columns:1fr}}
+.mail{
+  display:inline-block;font-size:clamp(22px,4.2vw,52px);
+  font-variation-settings:'wdth' 70,'wght' 800;line-height:1;
+  border-bottom:2px solid var(--seam);padding-bottom:8px;
+  transition:border-color .4s var(--ease);word-break:break-word;
+}
+.mail:hover{border-color:var(--honey)}
+.links{display:flex;flex-direction:column;gap:1px;background:var(--seam);border:var(--hair)}
+.links a{
+  background:var(--void);padding:15px 16px;display:flex;justify-content:space-between;
+  align-items:center;transition:background .3s var(--ease),padding-left .3s var(--ease);
+}
+.links a:hover{background:var(--iron);padding-left:24px}
+.links .lbl{color:var(--bone)}
+.links i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--ash)}
+
+/* ─── FOOTER ─── */
+footer{
+  border-top:var(--hair);padding:44px var(--gut) 120px;
+  display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+}
+footer img{width:34px;filter:grayscale(1) contrast(1.3) brightness(1.05);opacity:.55}
+
+/* ══════════ MINI PLAYER ══════════ */
+#mini{
+  position:fixed;left:0;right:0;bottom:0;z-index:700;
+  display:flex;align-items:center;gap:14px;
+  padding:9px var(--gut);border-top:var(--hair);
+  background:color-mix(in srgb,var(--void) 88%,transparent);
+  backdrop-filter:blur(16px) saturate(0);
+  transform:translateY(110%);transition:transform .65s var(--ease-mech);
+}
+#mini.show{transform:none}
+.mini-platter{position:relative;width:38px;height:38px;flex:none}
+.mini-platter .vinyl{box-shadow:inset 0 0 10px #000}
+.mini-platter .label{width:46%}
+#mini .txt{min-width:0;flex:1}
+#mini .txt b{display:block;font-family:var(--mono);font-size:11px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mini .txt span{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--ash)}
+#mini .bar{position:absolute;left:0;bottom:0;height:1px;background:var(--honey);width:0;transition:width .5s linear}
+
+/* ══════════ LIGHTBOX / VIDEO ══════════ */
+.modal{
+  position:fixed;inset:0;z-index:7000;background:rgba(6,6,6,.96);
+  display:grid;place-items:center;padding:clamp(16px,5vw,60px);
+  opacity:0;pointer-events:none;transition:opacity .45s var(--ease);
+}
+.modal.open{opacity:1;pointer-events:auto}
+.modal img{max-width:100%;max-height:86vh;object-fit:contain;border:var(--hair)}
+.modal .frame{width:min(1100px,100%);aspect-ratio:16/9;border:var(--hair);background:#000;position:relative}
+.modal .frame iframe{width:100%;height:100%;border:0}
+#vidFrame{width:100%;height:100%}
+#vidFrame iframe{width:100%;height:100%;border:0}
+/* Antes un <iframe src=embed> directo: si el dueño del video desactivó la
+   reproducción externa, YouTube falla DENTRO del iframe sin avisar afuera.
+   Con la IFrame Player API sí se puede escuchar el error real y decirlo. */
+.vid-fallback{
+  display:none;position:absolute;inset:0;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;text-align:center;
+  padding:40px;background:var(--void);
+}
+.vid-fallback.show{display:flex}
+.vid-fallback p{color:var(--ash);font-size:13px;max-width:36ch;line-height:1.6}
+.vid-fallback a{
+  font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--honey);border-bottom:1px solid var(--honey);
+  padding-bottom:2px;transition:opacity .2s;
+}
+.vid-fallback a:hover{opacity:.75}
+.close{
+  position:absolute;top:18px;right:calc(var(--gut));z-index:3;
+  font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.2em;
+  border:var(--hair);padding:9px 13px;transition:all .3s;
+}
+.close:hover{background:var(--bone);color:var(--void)}
+.mnav{position:absolute;top:50%;transform:translateY(-50%);font-size:26px;padding:18px;color:var(--smoke);transition:color .3s}
+.mnav:hover{color:var(--bone)}
+.mnav.p{left:6px}.mnav.n{right:6px}
+
+/* ══════════ REDUCED MOTION ══════════ */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important;scroll-behavior:auto!important}
+  .rev{clip-path:none;opacity:1}
+  .wordmark i{transform:none}
+  #grain{display:none}
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   TORNAMESA — controles
+   El fader de pitch mueve el objetivo del motor, no el audio: el
+   rate sale de la velocidad REAL del plato (rate = vel/NOMINAL).
+   Por eso arrancar, frenar, rayar y el pitch son el mismo camino.
+   ══════════════════════════════════════════════════════════════ */
+.rig{display:flex;gap:8px;align-items:stretch}
+.rig .deck{flex:1 1 auto;min-width:0}
+
+.pitch{
+  flex:0 0 52px;display:flex;flex-direction:column;align-items:center;gap:8px;
+  border:var(--hair);background:var(--carbon);padding:10px 0;
+}
+.pslot{position:relative;flex:1;width:100%;min-height:120px;display:grid;place-items:center}
+/* Un range vertical nativo es un campo de minas entre navegadores.
+   Rotar uno horizontal es estable en todos y conserva el estilo del mixer. */
+.pslot input[type=range]{
+  position:absolute;width:var(--len,150px);height:22px;
+  transform:rotate(-90deg);
+}
+.pticks{
+  position:absolute;top:0;bottom:0;left:50%;width:22px;transform:translateX(-50%);
+  background:
+    linear-gradient(var(--seam),var(--seam)) 50% 0/1px 100% no-repeat,
+    repeating-linear-gradient(to bottom,var(--seam) 0 1px,transparent 1px 10%);
+  opacity:.85;pointer-events:none;
+}
+.pticks::after{ /* la marca del cero, más larga */
+  content:'';position:absolute;left:-6px;right:-6px;top:50%;height:1px;background:var(--ash);
+}
+.preset{
+  font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.06em;
+  color:var(--ash);border:var(--hair);padding:4px 5px;transition:all .3s var(--ease);
+}
+.preset:hover{color:var(--void);background:var(--bone);border-color:var(--bone)}
+body.pitched .preset{color:var(--honey);border-color:var(--honey)}
+
+/* zona de arrastre para mp3 */
+.drop{
+  position:absolute;inset:0;z-index:6;display:grid;place-items:center;
+  background:rgba(6,6,6,.9);border:1px dashed var(--bone);
+  opacity:0;pointer-events:none;transition:opacity .25s var(--ease);
+}
+.drop p{text-align:center;color:var(--bone);line-height:1.6}
+.deck.over .drop{opacity:1}
+
+/* ── forma de onda ── */
+.wave{
+  position:relative;height:58px;margin-top:8px;border:var(--hair);
+  background:var(--carbon);cursor:pointer;overflow:hidden;
+}
+.wave canvas{width:100%;height:100%;display:block}
+.wave .head{
+  position:absolute;top:0;bottom:0;width:1px;background:var(--bone);
+  left:0;pointer-events:none;box-shadow:0 0 8px rgba(234,232,227,.7);
+}
+body.live .wave .head{background:var(--honey);box-shadow:0 0 10px var(--honey)}
+.wave::after{ /* ventana central: donde está la aguja */
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,rgba(6,6,6,.55),transparent 12% 88%,rgba(6,6,6,.55));
+}
+
+/* pista de uso */
+.tip{
+  margin-top:22px;max-width:46ch;font-size:13px;color:var(--ash);line-height:1.6;
+  opacity:0;transform:translateY(6px);transition:opacity .6s var(--ease),transform .6s var(--ease);
+}
+body.entered .tip{opacity:1;transform:none;transition-delay:1.1s}
+.tip .lbl{color:var(--bone)}
+body.scratching .tip{opacity:.25}
+
+/* el plato agarrado */
+.platter{cursor:grab}
+body.scratching .platter{cursor:grabbing}
+body.scratching .vinyl{filter:brightness(1.15)}
+
+@media(max-width:1000px){
+  .pitch{flex:0 0 46px}
+}
+
+
+/* "Cargar mp3" está activo y "Video ↗" deshabilitado cuando no hay link de
+   YouTube: no pueden verse igual de apagados. */
+#loadBtn{color:var(--bone);border-color:var(--ash);cursor:pointer}
+#loadBtn:hover{background:var(--bone);color:var(--void);border-color:var(--bone)}

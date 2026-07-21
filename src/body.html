@@ -1,0 +1,167 @@
+<div id="grain" aria-hidden="true"></div>
+
+<!-- ══ 00 · PUERTA ══
+     El navegador no deja crear un AudioContext sonando sin un gesto del
+     usuario. En vez de pelearlo, es la puerta del lugar. -->
+<div id="gate">
+  <div class="in">
+    <img class="bee" data-src="bee" alt="">
+    <h1>HONN3Y</h1>
+    <p class="sub lbl">DJ · Selector — Ciudad de México</p>
+    <button id="enter"><span>Entrar</span></button>
+    <p class="hint">El set arranca al entrar · sube el volumen</p>
+  </div>
+</div>
+
+<!-- ══ NAV ══ -->
+<header id="nav">
+  <a class="brand" href="#top"><img data-src="steel" alt=""><b>HONN3Y</b></a>
+  <nav><ul>
+    <li><a href="#sets">Sets</a></li>
+    <li><a href="#bio">Bio</a></li>
+    <li><a href="#gal">Galería</a></li>
+    <li><a href="#booking">Booking</a></li>
+  </ul></nav>
+  <div class="onair"><span class="lamp"></span><span class="lbl" id="airTxt">Fuera de aire</span></div>
+  <button id="burger" aria-label="Menú" aria-expanded="false"><i></i><i></i></button>
+</header>
+
+<nav id="menu" aria-hidden="true">
+  <a href="#sets"    style="--i:0">Sets</a>
+  <a href="#bio"     style="--i:1">Bio</a>
+  <a href="#gal"     style="--i:2">Galería</a>
+  <a href="#booking" style="--i:3">Booking</a>
+  <span class="lbl foot" style="--i:4">HONN3Y — CDMX</span>
+</nav>
+
+<main id="top">
+
+<!-- ══ 01 · EL REPRODUCTOR ══
+     El hero es una tesis: lo más característico del mundo de un DJ es el
+     equipo, así que el hero ES el equipo — un reproductor de mesa, no una
+     cabina de dos canales. Dibujado en CSS, no una foto: escala sin pixelar
+     y, sobre todo, se puede tocar. Cada control de aquí suena de verdad. -->
+<section id="deck-sec">
+  <div class="hero-top">
+    <div>
+      <div class="eyebrow">
+        <span class="lbl" id="airLbl">En pausa</span>
+        <span class="bar"></span>
+        <span id="nowTitle">—</span>
+      </div>
+
+      <h1 class="wordmark" aria-label="HONN3Y">
+        <span><i style="--i:0">H</i></span><span><i style="--i:1">O</i></span><span><i style="--i:2">N</i></span><span><i style="--i:3">N</i></span><span><i style="--i:4">3</i></span><span><i style="--i:5">Y</i></span>
+      </h1>
+
+      <div class="tag">
+        <i>Techno</i><i>Breaks</i><i>Selector</i><i>CDMX</i><i>Vinilo + Digital</i>
+      </div>
+    </div>
+  </div>
+
+  <!-- lo llena controllerHTML() -->
+  <div class="player-wrap">
+    <div id="ctrl-wrap"></div>
+    <!-- solo escritorio: la descripción del set activo, junto a su portada -->
+    <div class="setdesc" id="setdesc" aria-live="polite"></div>
+    <!-- el carril: portadas verticales, la seleccionada crece con transición
+         ascendente. Click en una portada = cargarla Y ver su video aquí mismo. -->
+    <aside id="rail" aria-label="Sets — la portada activa suena en el reproductor"></aside>
+  </div>
+
+  <p class="tip" id="tip">
+    <span class="lbl">Agarra el plato</span> y arrástralo — el audio te sigue
+    hacia adelante y hacia atrás. Suéltalo y el motor lo recupera. Gira el
+    <span class="lbl">selector</span> o toca una portada del carril para
+    cambiar de set.
+    <span class="lbl">Arrastra un mp3</span> sobre el reproductor para poner tu música.
+  </p>
+</section>
+
+<!-- ══ TICKER ══ -->
+<div class="ticker" aria-hidden="true"><div id="tick"></div></div>
+
+<!-- ══ 02 · SETS ══ -->
+<section id="sets">
+  <div class="head rev"><h2>Sets</h2><span class="lbl">04 grabaciones · click para cargar</span></div>
+  <div id="setlist"></div>
+</section>
+
+<!-- ══ 03 · BIO ══ -->
+<section id="bio">
+  <figure class="portrait rev">
+    <img data-src="dj" alt="HONN3Y en la controladora">
+    <figcaption>CDMX · 2025</figcaption>
+  </figure>
+  <div class="bio-copy rev" style="--i:1">
+    <span class="lbl">Bio</span>
+    <p class="lead" style="margin-top:14px">Cuarto chico, bocina prestada, la puerta abierta. Así empezó y así sigue sonando.</p>
+    <p>HONN3Y selecciona desde la CDMX: techno crudo, breaks y todo lo que aguante un sistema mal calibrado a las 4 de la mañana. Sin género fijo, sin complacencia — sesiones largas que se construyen de abajo hacia arriba.</p>
+    <p>Toca en fiestas de casa, bodegas y espacios que no aparecen en el mapa. Si hay corriente, hay set.</p>
+    <div class="stats">
+      <div><b id="sYears">04</b><span class="lbl">Años tocando</span></div>
+      <div><b>120+</b><span class="lbl">Fechas</span></div>
+      <div><b>∞</b><span class="lbl">Crate</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 04 · GALERÍA ══ -->
+<section id="gal">
+  <div class="head rev"><h2>Galería</h2><span class="lbl">Click para ampliar</span></div>
+  <div class="grid" id="grid"></div>
+</section>
+
+<!-- ══ 05 · BOOKING ══ -->
+<section id="booking">
+  <div class="head rev"><h2>Booking</h2><span class="lbl lbl--on">● Fechas abiertas</span></div>
+  <div class="book">
+    <div class="rev">
+      <p class="lbl" style="margin-bottom:18px">Escribe directo</p>
+      <a class="mail" href="mailto:booking@honey.dj">booking@honey.dj</a>
+      <p style="color:var(--ash);margin-top:22px;max-width:44ch;font-size:14px">Rider técnico y fichas de prensa a solicitud. Respuesta en 48 h.</p>
+    </div>
+    <div class="links rev" style="--i:1">
+      <a href="#" target="_blank" rel="noopener"><span class="lbl">Instagram</span><i>@honey ↗</i></a>
+      <a href="#" target="_blank" rel="noopener"><span class="lbl">SoundCloud</span><i>/honey ↗</i></a>
+      <a href="#" target="_blank" rel="noopener"><span class="lbl">YouTube</span><i>/@honey ↗</i></a>
+      <a href="#" target="_blank" rel="noopener"><span class="lbl">Resident Advisor</span><i>/dj/honey ↗</i></a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <img data-src="steel" alt="">
+  <span class="lbl">HONN3Y © 2026 — CDMX</span>
+  <span class="lbl">Diseño &amp; código · hecho a mano</span>
+</footer>
+
+<!-- ══ MINI PLAYER ══ -->
+<div id="mini">
+  <div class="bar" id="miniBar"></div>
+  <div class="mini-platter">
+    <div class="vinyl" id="miniVinyl"><div class="label empty" id="miniLabel"><img id="miniImg" alt=""></div></div>
+    <div class="spindle" style="width:9%"></div>
+  </div>
+  <button class="tbtn" id="miniPlay" aria-label="Start / Stop"><svg viewBox="0 0 24 24" id="miniIcon"><path d="M6 3l14 9-14 9z"/></svg></button>
+  <div class="txt"><b id="miniTitle">—</b><span id="miniMeta">—</span></div>
+  <button class="tbtn" id="miniNext" aria-label="Siguiente"><svg viewBox="0 0 24 24"><path d="M15 4h3v16h-3zM4 4l11 8-11 8z"/></svg></button>
+</div>
+
+<!-- ══ MODALES ══ -->
+<div class="modal" id="lb"><button class="close" data-close>Cerrar ✕</button>
+  <button class="mnav p" data-lb="-1" aria-label="Anterior">‹</button>
+  <img id="lbImg" alt=""><button class="mnav n" data-lb="1" aria-label="Siguiente">›</button>
+</div>
+<div class="modal" id="vid"><button class="close" data-close>Cerrar ✕</button>
+  <div class="frame">
+    <div id="vidFrame"></div>
+    <div class="vid-fallback" id="vidFallback">
+      <p id="vidFallbackMsg"></p>
+      <a id="vidFallbackLink" href="#" target="_blank" rel="noopener">Ver en YouTube ↗</a>
+    </div>
+  </div>
+</div>

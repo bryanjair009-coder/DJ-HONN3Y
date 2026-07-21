@@ -1,0 +1,23 @@
+{
+  "name": "proyecto-hon3y",
+  "version": "1.0.0",
+  "description": "Sitio de presentación de HONEY — DJ / selector. Tornamesa real con Web Audio.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve . -l 3000",
+    "build": "python3 tools/build.py",
+    "motion": "npx esbuild src/vendor/entry.js --bundle --format=iife --global-name=Motion --minify --outfile=src/vendor/motion.js",
+    "realtime": "npx esbuild src/vendor/entry-realtime.js --bundle --format=iife --global-name=SupabaseRealtime --minify --outfile=src/vendor/realtime.js"
+  },
+  "dependencies": {
+    "motion": "^12.42.2"
+  },
+  "devDependencies": {
+    "@fontsource-variable/archivo": "^5.0.0",
+    "@fontsource/space-mono": "^5.0.0",
+    "@supabase/realtime-js": "^2.110.8",
+    "esbuild": "^0.25.0",
+    "serve": "^14.2.6"
+  }
+}
