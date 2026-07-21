@@ -1,19 +1,16 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 --  SUPABASE_SETUP.sql  –  Configuración de base de datos para HONN3Y
 --  Corre esto UNA VEZ en Supabase → tu proyecto → SQL Editor → Run.
---  Con DROP IF EXISTS para que se pueda correr más de una vez sin error.
+--  Con IF EXISTS/IF NOT EXISTS para que se pueda correr más de una vez sin error.
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 
--- ── 1. LIMPIAR POLÍTICAS Y TRIGGERS EXISTENTES ──────────────────────────────
-
-DROP POLICY IF EXISTS "acceso_publico" ON sets;
-DROP TRIGGER IF EXISTS sets_updated_at ON sets;
-
-
--- ── 2. TABLA ─────────────────────────────────────────────────────────────────
+-- ── 1. TABLA ─────────────────────────────────────────────────────────────────
 -- Espejo de SETS en src/config.js. "position" decide el orden en el carril y
 -- el setlist (un array de Postgres no garantiza orden sin una columna para eso).
+-- Va primero: los DROP de abajo necesitan que "sets" ya exista para resolver
+-- la referencia, aunque sea IF EXISTS (esa cláusula perdona que falte la
+-- política/trigger, no que falte la tabla).
 
 CREATE TABLE IF NOT EXISTS sets (
   id           BIGSERIAL     PRIMARY KEY,
@@ -31,6 +28,13 @@ CREATE TABLE IF NOT EXISTS sets (
   created_at   TIMESTAMPTZ   DEFAULT NOW(),
   updated_at   TIMESTAMPTZ   DEFAULT NOW()
 );
+
+
+-- ── 2. LIMPIAR POLÍTICAS Y TRIGGERS EXISTENTES ──────────────────────────────
+-- (para poder correr este script más de una vez sin error "already exists")
+
+DROP POLICY IF EXISTS "acceso_publico" ON sets;
+DROP TRIGGER IF EXISTS sets_updated_at ON sets;
 
 
 -- ── 3. DATOS INICIALES ───────────────────────────────────────────────────────

@@ -1,0 +1,53 @@
+═══════════════════════════════════════════════════════
+  CÓMO CONECTAR HONN3Y A VERCEL (auto-deploy en push)
+═══════════════════════════════════════════════════════
+
+El repo ya está en GitHub: https://github.com/bryanjair009-coder/DJ-HONN3Y
+Cada vez que se haga push a "main", Vercel va a desplegar solo.
+
+PASOS (una sola vez):
+─────────────────────────────────────────────────────────────────
+1. Ir a vercel.com y entrar con tu cuenta (bryanjair009@gmail.com)
+2. "Add New..." → "Project"
+3. "Import Git Repository" → elegir bryanjair009-coder/DJ-HONN3Y
+   (si no aparece, hay que autorizar a Vercel sobre esa cuenta de GitHub
+   primero — Vercel te lo pide solo la primera vez)
+4. Framework Preset: dejar "Other" — vercel.json ya le dice que NO corra
+   ningún build (el sitio es HTML/CSS/JS puro, no hay nada que compilar
+   para servirlo; index.html ya referencia los archivos de src/ tal cual)
+5. Deploy
+6. Vercel da una URL como: https://dj-honn3y.vercel.app
+
+DESPUÉS DE ESTO:
+─────────────────────────────────────────────────────────────────
+git add -A
+git commit -m "lo que sea"
+git push origin main
+
+...y Vercel redepliega solo, sin tocar nada en vercel.com.
+
+SOBRE SUPABASE (los sets del reproductor):
+─────────────────────────────────────────────────────────────────
+- La tabla "sets" vive en Supabase, no en este repo. El sitio la lee en
+  vivo por HTTP + Realtime (src/supabase-client.js).
+- Antes del primer deploy hay que correr SUPABASE_SETUP.sql UNA VEZ en
+  Supabase → tu proyecto → SQL Editor → pegar → Run. Crea la tabla, mete
+  los 4 sets actuales y prende Realtime.
+- Editar un set (cambiar título, subir un mp3 nuevo, etc.) se hace desde
+  el Table Editor de Supabase, o pidiéndomelo a mí — el cambio se ve en
+  todos los navegadores conectados sin redeploy.
+- Si Supabase no responde (sin red, tabla borrada, etc.) el sitio no se
+  rompe: cae solo a los sets de src/config.js, igual que ya hacía con el
+  audio real vs. el loop sintético.
+
+NOTAS:
+─────────────────────────────────────────────────────────────────
+- El mp3 real (assets/sets/tomo-1.mp3, 60 MB) SÍ está en el repo y SÍ se
+  sirve desde Vercel — a diferencia de dist/honey-dj.html (el archivo
+  autocontenido para abrir con doble clic), la versión servida por Vercel
+  no tiene límite de tamaño de un solo HTML, así que el audio real suena
+  ahí sin trucos.
+- dist/ está en .gitignore — es un artefacto que se regenera con
+  `npm run build` (requiere Python + Node con esbuild instalado). No hace
+  falta para Vercel: Vercel sirve directo index.html + src/ + assets/.
+═══════════════════════════════════════════════════════
