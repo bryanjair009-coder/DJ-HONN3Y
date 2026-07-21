@@ -2,7 +2,8 @@ import { Rig } from './rig.js';
 import { controllerHTML, Controller } from './controller.js';
 import { renderLoop } from './tracks.js';
 import { SETS as FALLBACK_SETS } from './config.js';
-import { fetchSets, subscribeSets } from './supabase-client.js';
+import { fetchSets, subscribeSets, fetchGallery, subscribeGallery, fetchMeta, subscribeMeta } from './supabase-client.js';
+import { initAdmin } from './admin.js';
 
 /* Motion — bundle propio: animate del build mini + inView/stagger/spring. */
 const { animate, inView } = window.Motion;
@@ -15,6 +16,14 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const thumb = id => `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
 const thumbAlt = id => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
 const IMG = window.IMG;
+// Todo lo que viene de Supabase (sets, galería, bio) lo escribe el dueño desde
+// el panel admin y termina en innerHTML de la página pública — sin esto,
+// cualquier campo de texto sería una vía de XSS persistente para cualquiera
+// que llegue a la contraseña del panel (que no es segura de verdad, ver
+// admin.js). Los datos hardcodeados de config.js no lo necesitan (son míos),
+// pero esc() es barato y aplicarlo siempre evita tener que acordarse cuál
+// campo es de confianza y cuál no.
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const rig = new Rig();
 let ctrl = null, entered = false;
@@ -155,9 +164,9 @@ function paintDesc() {
   const go = () => {
     el.innerHTML = `
       <span class="sd-n">${pad(current + 1)}</span>
-      <span class="sd-title">${s.title}</span>
-      <span class="sd-meta">${s.venue} · ${s.bpm} BPM · ${s.key}</span>
-      <p class="sd-copy">${s.desc || ''}</p>`;
+      <span class="sd-title">${esc(s.title)}</span>
+      <span class="sd-meta">${esc(s.venue)} · ${esc(s.bpm)} BPM · ${esc(s.key)}</span>
+      <p class="sd-copy">${esc(s.desc)}</p>`;
     if (!reduce) animate(el, { opacity: [0, 1], transform: ['translateY(16px)', 'translateY(0)'] },
       { duration: .5, ease: [.22, .9, .18, 1] });
   };
@@ -248,17 +257,17 @@ async function openVideo(s) {
 function renderRail() {
   $('#rail').innerHTML = SETS.map((s, i) => `
   <button class="setcard ${i === current ? 'active' : ''}" data-i="${i}"
-          aria-label="${s.title}" aria-current="${i === current}">
+          aria-label="${esc(s.title)}" aria-current="${i === current}">
     <span class="sc-cover">
-      ${s.yt ? `<img src="${thumb(s.yt)}" onerror="this.onerror=null;this.src='${thumbAlt(s.yt)}'" alt="">`
+      ${s.yt ? `<img src="${esc(thumb(s.yt))}" onerror="this.onerror=null;this.src='${esc(thumbAlt(s.yt))}'" alt="">`
              : `<img class="sc-bee" data-src="bee" alt="">`}
     </span>
     <span class="sc-shade"></span>
     <span class="sc-n">${pad(i + 1)}</span>
     ${s.yt ? '<span class="sc-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg></span>' : ''}
     <span class="sc-txt">
-      <b class="sc-title">${s.title}</b>
-      <span class="sc-meta">${s.venue} · ${s.bpm} BPM</span>
+      <b class="sc-title">${esc(s.title)}</b>
+      <span class="sc-meta">${esc(s.venue)} · ${esc(s.bpm)} BPM</span>
     </span>
   </button>`).join('');
   $$('#rail [data-src]').forEach(el => el.src = IMG[el.dataset.src]);
@@ -351,11 +360,11 @@ function renderSetlist() {
   <button class="setrow rev" style="--i:${i}" data-i="${i}">
     <span class="idx">${pad(i + 1)}</span>
     <span class="thumb ${s.yt ? 'has' : ''}">
-      ${s.yt ? `<img src="${thumb(s.yt)}" onerror="this.onerror=null;this.src='${thumbAlt(s.yt)}'" alt="">` : ''}
+      ${s.yt ? `<img src="${esc(thumb(s.yt))}" onerror="this.onerror=null;this.src='${esc(thumbAlt(s.yt))}'" alt="">` : ''}
       <span class="wlmini">WHITE LABEL</span>
     </span>
-    <span><h3>${s.title}</h3><span class="meta">${s.venue} · ${s.date} · ${s.bpm} BPM · ${s.key}</span></span>
-    <span class="dur">${s.dur}</span>
+    <span><h3>${esc(s.title)}</h3><span class="meta">${esc(s.venue)} · ${esc(s.date)} · ${esc(s.bpm)} BPM · ${esc(s.key)}</span></span>
+    <span class="dur">${esc(s.dur)}</span>
     <span class="go">Cargar</span>
   </button>`).join('');
 }
@@ -364,7 +373,11 @@ renderSetlist();
 const TICK = ['Fechas abiertas', '<b>●</b> Booking', 'CDMX', 'Techno / Breaks', 'Sets de 2 h', 'Sin género fijo', '<b>●</b> Al aire'];
 $('#tick').innerHTML = [...TICK, ...TICK].map(t => `<span>${t}</span>`).join('');
 
-const TILES = [
+// Recorte fijo, elegido a mano para cada foto (ver README) — solo tiene
+// sentido para ESTAS dos fotos. Fotos subidas desde el admin no traen ese
+// trabajo de curaduría, así que se muestran simples (object-fit:cover), sin
+// z/o inventados al azar.
+const FALLBACK_TILES = [
   { c: 't1', src: IMG.deck, z: 2.3, o: '74% 22%', cap: 'Reproductor · detalle' },
   { c: 't2', src: IMG.dj, z: 1.9, o: '38% 8%', cap: 'Cabina · CDMX' },
   { c: 't3', src: IMG.deck, z: 2.4, o: '10% 34%', cap: 'Selector · portadas' },
@@ -372,13 +385,28 @@ const TILES = [
   { c: 't5', src: IMG.deck, z: 2.0, o: '66% 88%', cap: 'Cue · 4AM' },
   { c: 't6', src: IMG.dj, z: 1.25, o: '50% 30%', cap: 'Retrato' },
 ];
-$('#grid').innerHTML = TILES.map((t, i) => `
-  <figure class="tile ${t.c} rev" style="--i:${i % 3};--z:${t.z};--o:${t.o}" data-cap="${t.cap}" data-i="${i}">
-    <img src="${t.src}" alt="${t.cap}">
-  </figure>`).join('') + `
-  <figure class="tile slot s1 rev"><p>SLOT LIBRE<br>AÑADIR FOTO</p></figure>
-  <figure class="tile slot s2 rev"><p>SLOT LIBRE<br>AÑADIR FOTO</p></figure>
-  <figure class="tile slot s3 rev"><p>SLOT LIBRE<br>AÑADIR FOTO</p></figure>`;
+let TILES = FALLBACK_TILES;
+let galleryIsRemote = false;
+
+function renderGrid() {
+  $('#grid').innerHTML = galleryIsRemote
+    ? TILES.map((t, i) => `
+      <figure class="tile rev" style="--i:${i % 3}" data-i="${i}">
+        <img src="${esc(t.src)}" alt="${esc(t.cap || '')}">
+      </figure>`).join('')
+    : TILES.map((t, i) => `
+      <figure class="tile ${t.c} rev" style="--i:${i % 3};--z:${t.z};--o:${t.o}" data-cap="${t.cap}" data-i="${i}">
+        <img src="${t.src}" alt="${t.cap}">
+      </figure>`).join('') + `
+      <figure class="tile slot s1 rev"><p>SLOT LIBRE<br>AÑADIR FOTO</p></figure>
+      <figure class="tile slot s2 rev"><p>SLOT LIBRE<br>AÑADIR FOTO</p></figure>
+      <figure class="tile slot s3 rev"><p>SLOT LIBRE<br>AÑADIR FOTO</p></figure>`;
+}
+renderGrid();
+// El binding de ".rev" para esta primera pasada lo hace el barrido genérico
+// más abajo (corre una sola vez, después de que TODO el HTML inicial —
+// carril, setlist, galería— ya existe). Solo las actualizaciones en vivo de
+// applyGallery() necesitan volver a bindear, porque reemplazan el DOM.
 
 /* ═══════════ REVELADOS ═══════════
    OJO: amount debe ser 0 — los .rev llevan clip-path y Chromium recorta con
@@ -451,11 +479,52 @@ function applySets(remote) {
   $$('#setlist .rev').forEach(el => inView(el, () => el.classList.add('in'), { amount: 0, margin: '0px 0px -12% 0px' }));
 }
 
+/* ═══════════ SUPABASE — galería, en vivo ═══════════
+   Mismo trato que los sets: si hay fotos en la tabla "gallery" se muestran
+   esas (simples, sin el recorte a mano de las 6 fotos fijas); si no hay
+   ninguna o no hay red, se queda con las 6 fotos + los 3 "SLOT LIBRE" de
+   siempre. */
+function applyGallery(rows) {
+  galleryIsRemote = rows.length > 0;
+  TILES = galleryIsRemote ? rows.map(r => ({ src: r.image_url, cap: r.caption })) : FALLBACK_TILES;
+  renderGrid();
+  $$('#grid .rev').forEach(el => inView(el, () => el.classList.add('in'), { amount: 0, margin: '0px 0px -12% 0px' }));
+}
+
+/* ═══════════ SUPABASE — bio, stats y redes, en vivo ═══════════
+   Usa textContent/href, no innerHTML — no hace falta esc() aquí. Si un campo
+   viene vacío se deja el texto que ya estaba en el HTML (el de siempre),
+   para no mostrar bio en blanco antes de que el dueño llene el panel. */
+function applyMeta(meta) {
+  const setText = (id, val) => { if (val) { const el = document.getElementById(id); if (el) el.textContent = val; } };
+  setText('bioLead', meta.bio_lead);
+  setText('bioP1', meta.bio_p1);
+  setText('bioP2', meta.bio_p2);
+  setText('sYears', meta.stat_years);
+  setText('sDates', meta.stat_dates);
+  if (meta.contact_email) {
+    const mail = document.getElementById('mailLink');
+    if (mail) { mail.href = 'mailto:' + meta.contact_email; mail.textContent = meta.contact_email; }
+  }
+  const links = { linkInstagram: meta.social_instagram, linkSoundcloud: meta.social_soundcloud, linkYoutube: meta.social_youtube, linkRA: meta.social_ra };
+  for (const [id, url] of Object.entries(links)) {
+    if (!url) continue;
+    const el = document.getElementById(id);
+    if (el) el.href = url;
+  }
+}
+
 (async () => {
   try {
     const remote = await fetchSets();
     if (remote.length) applySets(remote);
   } catch (err) { console.warn('Supabase no disponible, uso sets locales:', err.message); }
+
+  try { applyGallery(await fetchGallery()); }
+  catch (err) { console.warn('Supabase no disponible, uso galería local:', err.message); }
+
+  try { applyMeta(await fetchMeta()); }
+  catch (err) { console.warn('Supabase no disponible, uso bio local:', err.message); }
 
   subscribeSets(async () => {
     try {
@@ -463,4 +532,14 @@ function applySets(remote) {
       if (remote.length) applySets(remote);
     } catch (err) { console.warn('No pude refrescar sets desde Supabase:', err.message); }
   });
+  subscribeGallery(async () => {
+    try { applyGallery(await fetchGallery()); }
+    catch (err) { console.warn('No pude refrescar la galería desde Supabase:', err.message); }
+  });
+  subscribeMeta(async () => {
+    try { applyMeta(await fetchMeta()); }
+    catch (err) { console.warn('No pude refrescar la bio desde Supabase:', err.message); }
+  });
+
+  initAdmin();
 })();
