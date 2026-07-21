@@ -78,9 +78,22 @@ function drawWave() {
 
 /* ═══════════ AUDIO ═══════════
    Tres vías: URL en config, arrastrar un mp3 al reproductor, o el loop
-   procedural como DEMO para que funcione sin archivos. */
+   procedural como DEMO para que funcione sin archivos.
+
+   El caché se indexa por el id ESTABLE del set (el id de Supabase, o el
+   índice si todavía no hay uno) — no por posición. Si llega una
+   actualización en vivo que reordena el carril, el buffer ya decodificado
+   sigue siendo válido: es el mismo set, solo cambió dónde se muestra.
+   Indexar por posición aquí fue justo el bug que causaba el delay al
+   cambiar de pista: cada actualización remota invalidaba TODO el caché y
+   forzaba volver a decodificar/renderizar en vivo — lo que el proyecto ya
+   había medido como carísimo (ver CLAUDE.md, "el audio en vivo compite con
+   el render offline"). */
+function keyFor(i) { return SETS[i]?.id ?? i; }
+
 async function audioFor(i) {
-  if (cache.has(i)) return cache.get(i);
+  const key = keyFor(i);
+  if (cache.has(key)) return cache.get(key);
   const s = SETS[i];
   let buf;
   if (s.audio) {
@@ -94,7 +107,7 @@ async function audioFor(i) {
     buf = await renderLoop({ bpm: +s.bpm || 128, seed: (i + 1) * 977, bars: 4 });
     s._demo = true;
   }
-  cache.set(i, buf);
+  cache.set(key, buf);
   return buf;
 }
 
@@ -422,8 +435,16 @@ addEventListener('keydown', e => {
    audio de alguien que está escuchando porque tú editaste una descripción en
    otra pestaña sería peor que la desincronización momentánea. */
 function applySets(remote) {
+  const prevById = new Map(SETS.map((s, i) => [keyFor(i), s]));
   SETS = remote;
-  cache.clear();
+  // Solo se invalida el caché de lo que de verdad cambió (audio o bpm, que
+  // son los únicos datos que afectan al buffer ya decodificado/renderizado).
+  // Un reordenamiento o una descripción editada no debe tirar audio ya listo.
+  for (const key of cache.keys()) {
+    const was = prevById.get(key);
+    const now = SETS.find((s, i) => keyFor(i) === key);
+    if (!now || !was || now.audio !== was.audio || now.bpm !== was.bpm) cache.delete(key);
+  }
   current = Math.min(current, SETS.length - 1);
   renderRail();
   renderSetlist();
