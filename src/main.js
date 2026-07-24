@@ -320,20 +320,21 @@ $('#enter').onclick = async () => {
   $('#ctrl-wrap').innerHTML = controllerHTML();
   $$('#ctrl-wrap [data-src]').forEach(el => el.src = IMG[el.dataset.src]);
   ctrl = new Controller($('#ctrl'), rig, { onState: paintNow, onStep: stepSet });
+  cacheRefs();
 
-  // TODOS los sets se renderizan AHORA, en silencio, antes de sonar nada.
-  // Medido: un loop tarda ~0.4s aislado, pero con el reproductor YA sonando
-  // (ScriptProcessor real interpolando audio en el hilo principal) el mismo
-  // render pasa a ~3-4s — el motor en vivo compite de verdad con el offline.
-  // Por eso se cachea todo antes del primer play, no después: así el
-  // selector es instantáneo para siempre en vez de tropezar cada vez que
-  // aterriza en un set sin cachear.
-  for (let i = 0; i < SETS.length; i++) await audioFor(i);
-
-  cacheRefs();   // el bucle no toca el jog hasta que hay algo que pintar
+  // Antes se esperaba a los CUATRO sets (fetch + decode/render) antes de
+  // sonar nada, para que cambiar de set después fuera instantáneo. Eso tenía
+  // sentido con el loop sintético (~0.4s cada uno), pero un set real de
+  // varias decenas de MB tarda mucho más en descargarse+decodificarse — y
+  // como esperaba a los 4 en serie, el silencio al entrar podía llegar a
+  // medio minuto aunque solo UNO tuviera audio real. Ahora solo se espera el
+  // que va a sonar; el resto se cachea después, ya con música de fondo.
+  $('[data-title]').textContent = 'Cargando…';
   await loadTo(0, true);
   wireDrop();
   addEventListener('resize', drawWave);
+
+  for (let i = 1; i < SETS.length; i++) await audioFor(i);
 };
 
 /* El selector: gira para cambiar de set — el gesto principal ahora que no hay
@@ -390,8 +391,14 @@ let galleryIsRemote = false;
 
 function renderGrid() {
   $('#grid').innerHTML = galleryIsRemote
+    // Sin recorte curado a mano (t.z/t.o) porque una foto subida por el
+    // dueño no lo trae, pero SÍ con el mismo span t1..t6 (se repite en
+    // ciclos de 6 para que la rejilla editorial grande/mediana/chica se
+    // mantenga sea cual sea el número de fotos) y el mismo data-cap que
+    // dispara la animación de caption al hacer hover — sin esos dos, las
+    // fotos subidas caían en una casilla de 1 columna sin caption.
     ? TILES.map((t, i) => `
-      <figure class="tile rev" style="--i:${i % 3}" data-i="${i}">
+      <figure class="tile t${(i % 6) + 1} rev" style="--i:${i % 3}" data-cap="${esc(t.cap || '')}" data-i="${i}">
         <img src="${esc(t.src)}" alt="${esc(t.cap || '')}">
       </figure>`).join('')
     : TILES.map((t, i) => `
