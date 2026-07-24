@@ -797,21 +797,22 @@ section{padding:var(--pad) var(--gut)}
    piezas de una fila miden lo mismo. Fila A = 3 unidades, filas B/C = 2. */
 .grid{
   display:grid;grid-template-columns:repeat(12,1fr);
-  grid-auto-rows:clamp(96px,12.5vw,168px);gap:clamp(8px,1.2vw,14px);
+  grid-auto-rows:clamp(130px,16.5vw,232px);gap:clamp(10px,1.6vw,20px);
 }
 .tile{
   position:relative;overflow:hidden;border:var(--hair);background:var(--carbon);
-  cursor:zoom-in;
+  cursor:zoom-in;transition:transform .5s var(--ease),box-shadow .5s var(--ease),border-color .5s var(--ease);
 }
+.tile:hover{transform:translateY(-5px);border-color:var(--ash);box-shadow:0 28px 50px -18px rgba(0,0,0,.75)}
 .tile img{
   width:100%;height:100%;object-fit:cover;
   transform:scale(var(--z,1));transform-origin:var(--o,50% 50%);
   transition:transform 1.2s var(--ease),filter .5s;
 }
-.tile:hover img{transform:scale(calc(var(--z,1) * 1.07))}
+.tile:hover img{transform:scale(calc(var(--z,1) * 1.1))}
 .tile::after{
-  content:attr(data-cap);position:absolute;left:10px;bottom:8px;z-index:2;
-  font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--bone);
+  content:attr(data-cap);position:absolute;left:12px;bottom:10px;z-index:2;
+  font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--bone);
   opacity:0;transform:translateY(6px);transition:all .4s var(--ease);
   text-shadow:0 1px 8px #000;
 }
