@@ -28,6 +28,26 @@ function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// Acepta un link completo de YouTube (watch?v=, youtu.be/, /embed/) o el ID
+// pegado a pelo (compatibilidad con lo que ya hubiera). Así el dueño copia y
+// pega la URL tal cual desde el navegador, sin tener que saber qué es un
+// "video ID" ni recortarlo a mano.
+function parseYouTube(raw) {
+  const s = (raw || '').trim();
+  if (!s) return { id: '', start: 0 };
+  if (!s.includes('/') && !s.includes('.') && !s.includes('?')) return { id: s, start: 0 };
+  try {
+    const url = new URL(/^https?:\/\//.test(s) ? s : `https://${s}`);
+    let id = url.searchParams.get('v') || '';
+    if (!id && url.hostname.includes('youtu.be')) id = url.pathname.slice(1);
+    if (!id && url.pathname.includes('/embed/')) id = url.pathname.split('/embed/')[1];
+    id = (id || '').split(/[&?]/)[0];
+    const t = url.searchParams.get('t') || url.searchParams.get('start') || '';
+    const start = parseInt(t, 10) || 0;
+    return { id, start };
+  } catch { return { id: s, start: 0 }; }
+}
+
 let panelEl = null;
 let authed = false;
 
@@ -64,7 +84,8 @@ function injectStyle() {
   background:#141414;border:1px solid #2f2f2f;color:#eae8e3;padding:7px 8px;font:12px/1.4 inherit;text-transform:none;letter-spacing:normal}
 .ap-full{grid-column:1/-1;margin-bottom:10px}
 .ap-card textarea{min-height:56px;resize:vertical}
-.ap-audio{display:flex;align-items:center;gap:10px;font-size:11px;color:#8f8f8f;margin-bottom:10px;flex-wrap:wrap}
+.ap-audio,.ap-cover{display:flex;align-items:center;gap:10px;font-size:11px;color:#8f8f8f;margin-bottom:10px;flex-wrap:wrap}
+.ap-cover-preview{width:40px;height:40px;object-fit:cover;border:1px solid #2f2f2f;flex-shrink:0}
 .ap-row-actions{display:flex;gap:8px}
 .ap-save{background:#e2a52f;color:#060606;border:0;padding:7px 16px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
 .ap-del{background:none;color:#c0553e;border:1px solid #c0553e;padding:7px 16px;font:inherit;font-size:11px;cursor:pointer}
@@ -169,11 +190,17 @@ function setRow(r) {
       <label>BPM<input data-f="bpm" value="${esc(r.bpm || '')}"></label>
       <label>Key<input data-f="key_camelot" value="${esc(r.key_camelot || '')}"></label>
       <label>Duración<input data-f="dur" value="${esc(r.dur || '')}" placeholder="33:32"></label>
-      <label>YouTube ID<input data-f="yt" value="${esc(r.yt || '')}"></label>
+      <label>YouTube (pega el link)<input data-f="yt" value="${esc(r.yt || '')}" placeholder="https://youtube.com/watch?v=..."></label>
       <label>YouTube inicio (s)<input data-f="yt_start" type="number" value="${r.yt_start || 0}"></label>
       <label>Posición<input data-f="position" type="number" value="${r.position || 0}"></label>
     </div>
     <label class="ap-full">Descripción<textarea data-f="description">${esc(r.description || '')}</textarea></label>
+    <div class="ap-cover">
+      ${r.cover_url ? `<img class="ap-cover-preview" src="${esc(r.cover_url)}" alt="">` : ''}
+      <span class="ap-cover-cur">${r.cover_url ? 'Portada cargada' : 'Sin portada (se usa la miniatura de YouTube)'}</span>
+      <input type="file" accept="image/*" data-cover>
+      <span class="ap-cover-status"></span>
+    </div>
     <div class="ap-audio">
       <span class="ap-audio-cur">${r.audio ? '🎵 ' + esc(r.audio.split('/').pop()) : 'Sin audio (usa el loop demo)'}</span>
       <input type="file" accept="audio/*" data-audio>
@@ -183,6 +210,12 @@ function setRow(r) {
       <button data-save class="ap-save">Guardar</button>
       <button data-del class="ap-del">Borrar</button>
     </div>`;
+
+  div.querySelector('[data-f="yt"]').onblur = e => {
+    const { id, start } = parseYouTube(e.target.value);
+    e.target.value = id;
+    if (start) div.querySelector('[data-f="yt_start"]').value = start;
+  };
 
   div.querySelector('[data-save]').onclick = async () => {
     const patch = {};
@@ -208,6 +241,23 @@ function setRow(r) {
       const url = await uploadFile('audio', path, file);
       await updateSet(r.id, { audio: url });
       div.querySelector('.ap-audio-cur').textContent = '🎵 ' + file.name;
+      status.textContent = 'Listo ✓';
+    } catch (err) { status.textContent = 'Error: ' + err.message; }
+  };
+
+  div.querySelector('[data-cover]').onchange = async e => {
+    const file = e.target.files[0]; if (!file) return;
+    const status = div.querySelector('.ap-cover-status');
+    status.textContent = 'Subiendo…';
+    try {
+      const path = `${Date.now()}-${file.name}`;
+      const url = await uploadFile('covers', path, file);
+      await updateSet(r.id, { cover_url: url });
+      const wrap = div.querySelector('.ap-cover');
+      wrap.querySelector('.ap-cover-cur').textContent = 'Portada cargada';
+      let img = wrap.querySelector('.ap-cover-preview');
+      if (!img) { img = document.createElement('img'); img.className = 'ap-cover-preview'; wrap.prepend(img); }
+      img.src = url;
       status.textContent = 'Listo ✓';
     } catch (err) { status.textContent = 'Error: ' + err.message; }
   };

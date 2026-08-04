@@ -87,6 +87,7 @@ function normalizeSet(row) {
     key: row.key_camelot || '',
     desc: row.description || '',
     dur: row.dur || '',
+    cover: row.cover_url || '',
   };
 }
 

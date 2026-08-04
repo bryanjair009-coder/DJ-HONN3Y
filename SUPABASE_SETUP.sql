@@ -28,9 +28,12 @@ CREATE TABLE IF NOT EXISTS sets (
   yt           TEXT          DEFAULT '',
   yt_start     INT           DEFAULT 0,
   audio        TEXT          DEFAULT '',
+  cover_url    TEXT          DEFAULT '',
   created_at   TIMESTAMPTZ   DEFAULT NOW(),
   updated_at   TIMESTAMPTZ   DEFAULT NOW()
 );
+-- Por si ya tenías la tabla de antes de que existiera esta columna.
+ALTER TABLE sets ADD COLUMN IF NOT EXISTS cover_url TEXT DEFAULT '';
 
 -- Álbum de fotos de la galería. image_url apunta al bucket de Storage "gallery".
 CREATE TABLE IF NOT EXISTS gallery (
@@ -123,14 +126,19 @@ INSERT INTO storage.buckets (id, name, public) VALUES ('audio', 'audio', true)
   ON CONFLICT (id) DO NOTHING;
 INSERT INTO storage.buckets (id, name, public) VALUES ('gallery', 'gallery', true)
   ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public) VALUES ('covers', 'covers', true)
+  ON CONFLICT (id) DO NOTHING;
 
 DROP POLICY IF EXISTS "acceso_publico_audio"   ON storage.objects;
 DROP POLICY IF EXISTS "acceso_publico_gallery" ON storage.objects;
+DROP POLICY IF EXISTS "acceso_publico_covers"  ON storage.objects;
 
 CREATE POLICY "acceso_publico_audio" ON storage.objects
   FOR ALL TO anon USING (bucket_id = 'audio') WITH CHECK (bucket_id = 'audio');
 CREATE POLICY "acceso_publico_gallery" ON storage.objects
   FOR ALL TO anon USING (bucket_id = 'gallery') WITH CHECK (bucket_id = 'gallery');
+CREATE POLICY "acceso_publico_covers" ON storage.objects
+  FOR ALL TO anon USING (bucket_id = 'covers') WITH CHECK (bucket_id = 'covers');
 
 
 -- ── 6. REALTIME ──────────────────────────────────────────────────────────────

@@ -199,7 +199,8 @@ function paintNow() {
   $('#miniTitle').textContent = rig.set.title;
   $('#miniMeta').textContent = `${rig.set.venue} · ${rig.bpm.toFixed(1)} BPM${rig.set._demo ? ' · DEMO' : ''}`;
   const ml = $('#miniLabel'), mi = $('#miniImg');
-  if (rig.set.yt) { ml.classList.remove('empty'); mi.src = thumb(rig.set.yt); } else ml.classList.add('empty');
+  const miniCover = rig.set.cover || (rig.set.yt ? thumb(rig.set.yt) : '');
+  if (miniCover) { ml.classList.remove('empty'); mi.src = miniCover; } else ml.classList.add('empty');
   const ic = $('#miniIcon');
   if (ic) ic.innerHTML = live ? '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>' : '<path d="M6 3l14 9-14 9z"/>';
 }
@@ -241,7 +242,7 @@ function showVidError(msg) {
 let ytPlayer = null;
 async function openVideo(s) {
   if (!s?.yt) return;
-  rig.platter.stop(); ctrl?.paint();
+  rig.platter?.stop(); ctrl?.paint();
   $('#vid').classList.add('open'); document.body.classList.add('locked');
   $('#vidFallback').classList.remove('show');
   $('#vidFrame').style.display = '';
@@ -273,8 +274,9 @@ function renderRail() {
   <button class="setcard ${i === current ? 'active' : ''}" data-i="${i}"
           aria-label="${esc(s.title)}" aria-current="${i === current}">
     <span class="sc-cover">
-      ${s.yt ? `<img src="${esc(thumb(s.yt))}" onerror="this.onerror=null;this.src='${esc(thumbAlt(s.yt))}'" alt="">`
-             : `<img class="sc-bee" data-src="bee" alt="">`}
+      ${s.cover ? `<img src="${esc(s.cover)}" alt="">`
+        : s.yt ? `<img src="${esc(thumb(s.yt))}" onerror="this.onerror=null;this.src='${esc(thumbAlt(s.yt))}'" alt="">`
+        : `<img class="sc-bee" data-src="bee" alt="">`}
     </span>
     <span class="sc-shade"></span>
     <span class="sc-n">${pad(i + 1)}</span>
@@ -372,8 +374,9 @@ function renderSetlist() {
   $('#setlist').innerHTML = SETS.map((s, i) => `
   <button class="setrow rev" style="--i:${i}" data-i="${i}">
     <span class="idx">${pad(i + 1)}</span>
-    <span class="thumb ${s.yt ? 'has' : ''}">
-      ${s.yt ? `<img src="${esc(thumb(s.yt))}" onerror="this.onerror=null;this.src='${esc(thumbAlt(s.yt))}'" alt="">` : ''}
+    <span class="thumb ${(s.cover || s.yt) ? 'has' : ''}">
+      ${s.cover ? `<img src="${esc(s.cover)}" alt="">`
+        : s.yt ? `<img src="${esc(thumb(s.yt))}" onerror="this.onerror=null;this.src='${esc(thumbAlt(s.yt))}'" alt="">` : ''}
       <span class="wlmini">WHITE LABEL</span>
     </span>
     <span><h3>${esc(s.title)}</h3><span class="meta">${esc(s.venue)} · ${esc(s.date)} · ${esc(s.bpm)} BPM · ${esc(s.key)}</span></span>
