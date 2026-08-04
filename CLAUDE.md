@@ -365,6 +365,40 @@ tiempo mostrado avanza solo, y rayar hacia atrás mueve el tiempo real
 (`16:46 → 16:41` tras un rayado sostenido — el `%` redondeado no lo muestra
 en una pista de 33 min, hay que leer el tiempo, no el porcentaje).
 
+## ▓ Sexta vuelta: Supabase, panel admin, y el precio real de "cachear todo"
+
+Los sets pasaron de `config.js` a una tabla de Supabase editable desde un
+panel oculto (`src/admin.js`, entra con `#admin` en la URL). Cuando el
+cliente reemplazó los loops demo por canciones reales en varios sets a la
+vez, aparecieron dos bugs que **contradicen decisiones documentadas arriba**
+— si vas a tocar el audio, lee esto primero:
+
+1. **`postMessage` SIN transferables clona el buffer entero.** `turntable.js`
+   mandaba el audio decodificado al AudioWorklet con
+   `port.postMessage({t:'buf', ch})`. Sin una lista de transferibles, eso
+   **clona** cada `Float32Array` completo al cruzar de hilo. Con un loop demo
+   de segundos no se nota. Con una canción real de varios minutos son
+   cientos de MB copiados de golpe — eso congelaba y crasheaba la pestaña
+   **justo al reproducir**, no al descargar. Arreglado pasando
+   `ch.map(c => c.buffer)` como segundo argumento: mueve la memoria en vez
+   de copiarla, coste ~0. Cualquier `postMessage` de un buffer de audio real
+   necesita su lista de transferibles — no es opcional aquí.
+
+2. **"Cachear TODO el catálogo" (Segunda vuelta, arriba) deja de ser seguro
+   con contenido real.** Esa regla tenía sentido cuando 3 de 4 sets eran
+   loops sintéticos de unos KB. Con canciones reales de varios minutos, cada
+   buffer decodificado pesa cientos de MB — precargar 4 a la vez agota la
+   memoria de la pestaña, prerender en segundo plano o no. Se cambió a carga
+   perezosa con un caché LRU de 2 (`MAX_CACHED` en `main.js`): el actual y
+   el anterior, no el catálogo entero. **No vuelvas al prerender-todo** solo
+   porque la Segunda vuelta lo recomendaba — esa recomendación era correcta
+   para loops, no para audio real. Si el catálogo crece con más canciones
+   reales, esto solo se vuelve más importante, no menos.
+
+3. De paso, "Entrar" ya no espera a que termine ningún set aparte del
+   primero (antes había un bucle de precarga en segundo plano justo después
+   del primer play — se quitó junto con el punto 2).
+
 ## Verificar antes de dar por bueno
 
 ```
