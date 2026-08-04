@@ -100,9 +100,21 @@ function drawWave() {
    el render offline"). */
 function keyFor(i) { return SETS[i]?.id ?? i; }
 
+// Cuántos AudioBuffer decodificados se guardan a la vez. Antes se
+// prerrenderizaba y cacheaba TODO el catálogo, lo cual tenía sentido con
+// loops sintéticos de unos KB — pero con canciones reales de varios minutos
+// cada buffer decodificado pesa cientos de MB, y cachear 4+ de golpe agota
+// la memoria de la pestaña. Con un límite chico, cambiar entre los últimos
+// sets sigue siendo instantáneo sin arriesgar todo el catálogo en RAM.
+const MAX_CACHED = 2;
+
 async function audioFor(i) {
   const key = keyFor(i);
-  if (cache.has(key)) return cache.get(key);
+  if (cache.has(key)) {
+    const buf = cache.get(key);
+    cache.delete(key); cache.set(key, buf); // lo más reciente va al final
+    return buf;
+  }
   const s = SETS[i];
   let buf;
   if (s.audio) {
@@ -117,12 +129,14 @@ async function audioFor(i) {
     s._demo = true;
   }
   cache.set(key, buf);
+  while (cache.size > MAX_CACHED) cache.delete(cache.keys().next().value);
   return buf;
 }
 
 /* ═══════════ CARGAR UN SET ═══════════ */
 async function loadTo(i, autoplay = true) {
   const s = SETS[i];
+  if (!cache.has(keyFor(i))) $('[data-title]').textContent = 'Cargando…';
   const buf = await audioFor(i);
   rig.load(buf, s);
   current = i;
@@ -322,19 +336,17 @@ $('#enter').onclick = async () => {
   ctrl = new Controller($('#ctrl'), rig, { onState: paintNow, onStep: stepSet });
   cacheRefs();
 
-  // Antes se esperaba a los CUATRO sets (fetch + decode/render) antes de
-  // sonar nada, para que cambiar de set después fuera instantáneo. Eso tenía
-  // sentido con el loop sintético (~0.4s cada uno), pero un set real de
-  // varias decenas de MB tarda mucho más en descargarse+decodificarse — y
-  // como esperaba a los 4 en serie, el silencio al entrar podía llegar a
-  // medio minuto aunque solo UNO tuviera audio real. Ahora solo se espera el
-  // que va a sonar; el resto se cachea después, ya con música de fondo.
-  $('[data-title]').textContent = 'Cargando…';
+  // Solo se espera el set que va a sonar — nada más. Antes había además un
+  // bucle que prerrenderizaba TODO el catálogo en segundo plano justo
+  // después de este primer play; con loops sintéticos de unos KB eso era
+  // gratis, pero con canciones reales de varios minutos cada una son varios
+  // cientos de MB por buffer, y precargarlas todas de una (aunque fuera "en
+  // segundo plano") es la otra mitad del problema de memoria que crasheaba
+  // la pestaña. Ahora cada set se descarga/decodifica solo cuando el
+  // visitante realmente lo pide (ver MAX_CACHED en audioFor).
   await loadTo(0, true);
   wireDrop();
   addEventListener('resize', drawWave);
-
-  for (let i = 1; i < SETS.length; i++) await audioFor(i);
 };
 
 /* El selector: gira para cambiar de set — el gesto principal ahora que no hay

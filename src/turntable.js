@@ -127,7 +127,15 @@ export class VinylEngine {
     const ch = [];
     for (let c = 0; c < Math.min(2, audioBuffer.numberOfChannels); c++)
       ch.push(audioBuffer.getChannelData(c).slice());
-    if (this.mode === 'worklet') this.node.port.postMessage({ t: 'buf', ch });
+    if (this.mode === 'worklet') {
+      // SIN la lista de transferibles, postMessage CLONA cada Float32Array
+      // completo al cruzar al hilo del worklet. Para un loop demo de unos
+      // segundos eso no se nota; para una canción real de varios minutos son
+      // cientos de MB copiados de golpe — eso es lo que congelaba/crasheaba
+      // la pestaña al reproducir un set real. Pasar los .buffer como
+      // transferables mueve la memoria en vez de copiarla: coste ~0.
+      this.node.port.postMessage({ t: 'buf', ch }, ch.map(c => c.buffer));
+    }
     else { this._chans = ch; this._pos = 0; }
     this.position = 0; this.clearLoop();
   }
