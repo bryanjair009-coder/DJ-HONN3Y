@@ -108,6 +108,25 @@ function keyFor(i) { return SETS[i]?.id ?? i; }
 // sets sigue siendo instantáneo sin arriesgar todo el catálogo en RAM.
 const MAX_CACHED = 2;
 
+// El plato de la página solo necesita un AVANCE del set, no la canción
+// completa — el set completo se escucha abriendo el video de YouTube (ver
+// openVideo). 26 MB cubre ~10 min incluso a 320kbps (a los ~251kbps reales
+// de los mp3 del cliente son más bien ~13-14 min; de sobra para "los
+// primeros 10 minutos" sin tener que parsear el bitrate real del archivo).
+// Se pide con Range para que el navegador NI SIQUIERA DESCARGUE el resto —
+// esto es lo que de verdad acorta el tiempo de carga entre sets, no solo la
+// memoria: antes se bajaban y decodificaban los 60+ MB completos cada vez.
+const PREVIEW_BYTES = 26 * 1024 * 1024;
+
+async function fetchAudioBytes(url) {
+  try {
+    const r = await fetch(url, { headers: { Range: `bytes=0-${PREVIEW_BYTES - 1}` } });
+    if (r.ok) return r.arrayBuffer();
+  } catch { /* el host no soporta Range, o el CORS lo bloquea — sigue abajo */ }
+  const full = await fetch(url); // respaldo: el archivo completo, como antes
+  return full.arrayBuffer();
+}
+
 async function audioFor(i) {
   const key = keyFor(i);
   if (cache.has(key)) {
@@ -119,8 +138,7 @@ async function audioFor(i) {
   let buf;
   if (s.audio) {
     try {
-      const r = await fetch(s.audio);
-      buf = await rig.decode(await r.arrayBuffer());
+      buf = await rig.decode(await fetchAudioBytes(s.audio));
       s._demo = false;
     } catch (err) { console.warn('No pude cargar', s.audio, '—', err.message); }
   }
@@ -242,7 +260,14 @@ function showVidError(msg) {
 let ytPlayer = null;
 async function openVideo(s) {
   if (!s?.yt) return;
-  rig.platter?.stop(); ctrl?.paint();
+  rig.platter?.stop();
+  // platter.stop() frena el plato con la física real (~1.9s de desaceleración,
+  // ver CLAUDE.md) — de sobra para que el audio del video, que arranca casi
+  // de inmediato, quede encimado con la cola del plato todavía sonando. El
+  // volumen SÍ tiene que caer a cero ya, sin rampa: por eso .value directo en
+  // vez de rig.setVolume() (que usa setTargetAtTime, una rampa suave).
+  if (rig.volume) rig.volume.gain.value = 0;
+  ctrl?.paint();
   $('#vid').classList.add('open'); document.body.classList.add('locked');
   $('#vidFallback').classList.remove('show');
   $('#vidFrame').style.display = '';
@@ -463,6 +488,10 @@ function closeAll() {
   if (ytPlayer) { try { ytPlayer.stopVideo(); } catch {} }
   $('#vidFallback').classList.remove('show');
   document.body.classList.remove('locked');
+  // El plato queda pausado (platter.stop() de openVideo no se deshace solo,
+  // a propósito: no queremos que el audio arranque solo al cerrar el video).
+  // Sí se restaura el volumen para que la próxima vez que le den play suene.
+  if (rig.volume) rig.volume.gain.value = 0.85;
 }
 $$('[data-close]').forEach(b => b.onclick = closeAll);
 $$('.modal').forEach(m => m.onclick = e => { if (e.target === m) closeAll(); });
